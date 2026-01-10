@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\NasabahVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -18,9 +20,13 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'username', 
         'email',
         'password',
+        'email_verified_at',
+        'role', 
+        'status',
+        'avatar',
     ];
 
     /**
@@ -42,4 +48,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+    
+    public function sendEmailVerificationNotification()
+    {
+        // Cek Role, jika Nasabah pakai template khusus
+        if ($this->role === 'Nasabah') {
+            $this->notify(new NasabahVerifyEmail); 
+        } else {
+            // Jika Admin/Funding (misal register lewat admin), pakai template default Laravel
+            // Atau Anda bisa parent::sendEmailVerificationNotification(); jika tidak di-override
+            $this->notify(new \Illuminate\Auth\Notifications\VerifyEmail); 
+        }
+    }
 }
