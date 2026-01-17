@@ -16,20 +16,14 @@ class DemoDataSeeder extends Seeder
     {
         $cabang = User::create([
             'username' => 'cabang',
-            'email' => 'cabang@bsi.com',
             'password' => Hash::make('12345678'),
             'role' => 'cabang',
-            'email_verified_at' => now(),
-            'status' => 'active', // Pastikan status aktif
         ]);
 
         $pupr = User::create([
             'username' => 'pupr',
-            'email' => 'pupr@bsi.com',
             'password' => Hash::make('12345678'),
             'role' => 'pupr',
-            'email_verified_at' => now(), 
-            'status' => 'active', // Pastikan status aktif
         ]);
     }
         
