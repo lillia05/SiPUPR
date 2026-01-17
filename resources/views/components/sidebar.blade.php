@@ -7,21 +7,34 @@
         
         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Menu Utama</p>
         
-        @php
+       @php
             $user = auth()->user();
-            $role = $user->role;
-            $prefix = strtolower($role); 
+            $originalRole = $user->role; // Role asli dari Database (Admin/Funding)
             
-            $isAdmin = ($role === 'Admin');
+            // LOGIKA BARU: Mapping Role DB ke Tampilan Baru
+            // Ini membuat Frontend terlihat baru tanpa mengubah Backend/DB dulu
+            if ($originalRole === 'Admin') {
+                $roleLabel = 'Kementrian PUPR'; // Nama yang tampil
+                $prefix = 'pupr';               // Prefix route baru
+                $isAdmin = true;
+            } elseif ($originalRole === 'Funding') {
+                $roleLabel = 'Cabang';          // Nama yang tampil
+                $prefix = 'cabang';             // Prefix route baru
+                $isAdmin = false;
+            } else {
+                $roleLabel = 'Nasabah';
+                $prefix = 'nasabah';
+                $isAdmin = false;
+            }
 
+            // Gunakan prefix baru untuk generate link
             $dashboardRoute = route($prefix . '.dashboard');
-            $nasabahRoute   = route($prefix . '.nasabah.index');
-            $trackingRoute  = route($prefix . '.tracking.index');
-
+            
+            // Cek aktif menu (perlu penyesuaian karena nama route berubah)
             $isDashboardActive = request()->routeIs($prefix . '.dashboard');
             $isNasabahActive   = request()->routeIs($prefix . '.nasabah.*');
             $isTrackingActive  = request()->routeIs($prefix . '.tracking.*');
-            $isUsersActive     = request()->routeIs('admin.users.*');
+            $isUsersActive     = request()->routeIs($prefix . '.users.*'); // Admin users
         @endphp
 
 
@@ -83,7 +96,8 @@
                     {{ $user->name ?? $user->username }}
                 </p>
                 <p class="text-xs text-gray-500 truncate">
-                    {{ $role }}
+                    {{-- GANTI INI: dari {{ $role }} menjadi {{ $roleLabel }} --}}
+                    {{ $roleLabel }} 
                 </p>
             </div>
 
