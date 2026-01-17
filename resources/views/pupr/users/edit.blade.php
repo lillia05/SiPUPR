@@ -7,7 +7,7 @@
     {{-- HEADER & TOMBOL KEMBALI --}}
     <div class="flex items-center justify-between mb-12">
         <div class="flex-1">
-            <a href="{{ route('admin.users.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-bsi-teal transition shadow-sm">
+            <a href="{{ route('pupr.users.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-bsi-teal transition shadow-sm">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 Kembali
             </a>
@@ -20,7 +20,7 @@
     </div>
 
     {{-- FORM EDIT --}}
-    <form action="{{ route('admin.users.update', $user->id) }}" method="POST">
+    <form action="{{ route('pupr.users.update', $user->id) }}" method="POST">
         @csrf
         @method('PUT')
 
@@ -60,7 +60,7 @@
                                 <select name="role" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-1 focus:ring-bsi-teal focus:border-bsi-teal outline-none transition bg-white appearance-none cursor-pointer">
                                     {{-- Sesuaikan Value dengan Database --}}
                                     <option value="Funding" {{ $user->role == 'Funding' ? 'selected' : '' }}>Funding Officer</option>
-                                    <option value="Admin" {{ $user->role == 'Admin' ? 'selected' : '' }}>Administrator</option>
+                                    <option value="pupr" {{ $user->role == 'pupr' ? 'selected' : '' }}>pupr</option>
                                 </select>
                                 <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>

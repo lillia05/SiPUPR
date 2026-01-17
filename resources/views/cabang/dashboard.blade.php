@@ -1,6 +1,6 @@
-@extends('layouts.funding')
+@extends('layouts.cabang')
 
-@section('title', 'Dashboard Funding')
+@section('title', 'Dashboard')
 
 @section('content')
     {{-- Header Banner --}}

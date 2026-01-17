@@ -24,11 +24,11 @@ class RedirectIfAuthenticated
                 
                 $user = Auth::guard($guard)->user();
                 
-                if ($user->role === 'Admin') {
-                    return redirect()->route('admin.dashboard');
+                if ($user->role === 'pupr') {
+                    return redirect()->route('pupr.dashboard');
                 }
-                if ($user->role === 'Funding') {
-                    return redirect()->route('funding.dashboard');
+                if ($user->role === 'cabang') {
+                    return redirect()->route('cabang.dashboard');
                 }
                 
                 return redirect('/');

@@ -7,38 +7,40 @@
         
         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Menu Utama</p>
         
-       @php
+        @php
             $user = auth()->user();
-            $originalRole = $user->role; // Role asli dari Database (Admin/Funding)
+            $role = $user->role; // Sekarang sudah 'pupr' atau 'cabang'
             
-            // LOGIKA BARU: Mapping Role DB ke Tampilan Baru
-            // Ini membuat Frontend terlihat baru tanpa mengubah Backend/DB dulu
-            if ($originalRole === 'Admin') {
-                $roleLabel = 'Kementrian PUPR'; // Nama yang tampil
-                $prefix = 'pupr';               // Prefix route baru
+            // Definisikan variabel default
+            $roleLabel = 'User';
+            $prefix = 'home';
+            $isAdmin = false;
+
+            // Logika Penentuan Role
+            if ($role === 'pupr') {
+                $roleLabel = 'Kementrian PUPR';
+                $prefix = 'pupr';
                 $isAdmin = true;
-            } elseif ($originalRole === 'Funding') {
-                $roleLabel = 'Cabang';          // Nama yang tampil
-                $prefix = 'cabang';             // Prefix route baru
-                $isAdmin = false;
-            } else {
-                $roleLabel = 'Nasabah';
-                $prefix = 'nasabah';
+            } elseif ($role === 'cabang') {
+                $roleLabel = 'Cabang';
+                $prefix = 'cabang';
                 $isAdmin = false;
             }
 
-            // Gunakan prefix baru untuk generate link
+            // Generate Link berdasarkan prefix
             $dashboardRoute = route($prefix . '.dashboard');
-            
-            // Cek aktif menu (perlu penyesuaian karena nama route berubah)
+            $nasabahRoute   = route($prefix . '.nasabah.index');
+            $trackingRoute  = route($prefix . '.tracking.index');
+
+            // Cek Status Aktif
             $isDashboardActive = request()->routeIs($prefix . '.dashboard');
             $isNasabahActive   = request()->routeIs($prefix . '.nasabah.*');
             $isTrackingActive  = request()->routeIs($prefix . '.tracking.*');
-            $isUsersActive     = request()->routeIs($prefix . '.users.*'); // Admin users
+            $isUsersActive     = request()->routeIs($prefix . '.users.*'); 
         @endphp
 
 
-        {{-- 1. DASHBOARD (Dinamis) --}}
+        {{-- 1. DASHBOARD --}}
         <a href="{{ $dashboardRoute }}" 
            class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all 
            {{ $isDashboardActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal shadow-sm border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
@@ -46,9 +48,9 @@
             Dashboard
         </a>
 
-        {{-- 2. MANAJEMEN AKUN (Hanya Tampil Jika Admin) --}}
+        {{-- 2. MANAJEMEN AKUN (Hanya PUPR/Admin) --}}
         @if($isAdmin)
-            <a href="{{ route('admin.users.index') }}" 
+            <a href="{{ route('pupr.users.index') }}" 
                class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors
                {{ $isUsersActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -56,7 +58,7 @@
             </a>
         @endif
         
-        {{-- 3. DATA NASABAH (Dinamis) --}}
+        {{-- 3. DATA NASABAH --}}
         <a href="{{ $nasabahRoute }}" 
            class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors
            {{ $isNasabahActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
@@ -64,7 +66,7 @@
             Data Nasabah
         </a>
 
-        {{-- 4. DISTRIBUSI TABUNGAN (Dinamis) --}}
+        {{-- 4. TRACKING BANTUAN --}}
         <a href="{{ $trackingRoute }}" 
            class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors
            {{ $isTrackingActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
@@ -78,7 +80,7 @@
     <div class="border-t border-gray-100 p-4 bg-gray-50">
         <div class="flex items-center">
             
-            {{-- AVATAR: Menggunakan inisial nama jika tidak ada foto --}}
+            {{-- AVATAR --}}
             <div class="flex-shrink-0">
                 @if($user->avatar && file_exists(storage_path('app/public/' . $user->avatar)))
                     <img src="{{ asset('storage/' . $user->avatar) }}" 
@@ -96,7 +98,6 @@
                     {{ $user->name ?? $user->username }}
                 </p>
                 <p class="text-xs text-gray-500 truncate">
-                    {{-- GANTI INI: dari {{ $role }} menjadi {{ $roleLabel }} --}}
                     {{ $roleLabel }} 
                 </p>
             </div>

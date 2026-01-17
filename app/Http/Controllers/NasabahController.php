@@ -19,40 +19,54 @@ class NasabahController extends Controller
 {
     public function index(Request $request)
     {
+        // 1. Inisialisasi Query dengan Eager Loading
         $query = Nasabah::with(['user', 'pengajuan']);
 
+        // 2. Logic Searching
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = $request->input('search'); // Gunakan input() lebih aman
             $query->where(function($q) use ($search) {
-                $q->where('nik_ktp', 'like', "%$search%")
+                $q->where('nik_ktp', 'like', "%{$search}%")
                   ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('username', 'like', "%$search%");
+                      $userQuery->where('name', 'like', "%{$search}%") // Cari berdasarkan Name juga
+                                ->orWhere('username', 'like', "%{$search}%");
                   })
                   ->orWhereHas('pengajuan', function($pengajuanQuery) use ($search) {
-                      $pengajuanQuery->where('no_rek', 'like', "%$search%"); 
+                      $pengajuanQuery->where('no_rek', 'like', "%{$search}%"); 
                   });
             });
         }
 
+        // 3. Logic Filter Produk
         if ($request->filled('produk')) {
-            $query->whereHas('pengajuan', function($q) use ($request) {
-                $q->where('jenis_produk', $request->produk);
+            $produk = $request->input('produk');
+            $query->whereHas('pengajuan', function($q) use ($produk) {
+                $q->where('jenis_produk', $produk);
             });
         }
 
+        // 4. Pagination
         $perPage = $request->input('per_page', 10);
-        
         $nasabah = $query->latest()->paginate($perPage);
-
+        
+        // Penting: Append query string agar pagination tidak reset saat ganti halaman
         $nasabah->appends($request->all());
 
-        // View tetap menggunakan path yang sama karena kita sudah setting layoutnya dinamis
-        return view('funding.nasabah.index', compact('nasabah'));
+        // 5. [FIX UTAMA] Tentukan View Berdasarkan Role User
+        // Agar tidak hardcoded ke 'funding.nasabah.index'
+        $prefix = strtolower(auth()->user()->role); // Hasil: 'cabang' atau 'funding'
+        
+        // Pastikan Anda memiliki folder view: 
+        // resources/views/cabang/nasabah/index.blade.php
+        // resources/views/funding/nasabah/index.blade.php
+        return view($prefix . '.nasabah.index', compact('nasabah'));
     }
 
     public function create()
     {
-        return view('funding.nasabah.create');
+        // Sesuaikan juga view create agar dinamis
+        $prefix = strtolower(auth()->user()->role);
+        return view($prefix . '.nasabah.create');
     }
 
     public function store(Request $request)
@@ -61,23 +75,19 @@ class NasabahController extends Controller
             'username' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'jenis_produk' => 'required',
-            
             'nik_ktp' => 'required|numeric|digits:16|unique:nasabah,nik_ktp',
-            'npwp' => 'nullable|string', // NPWP kadang ada titik/strip, ubah ke string jika perlu, atau numeric jika murni angka
+            'npwp' => 'nullable|string', 
             'no_hp' => 'required|numeric',
             'tempat_lahir' => 'required',
             'tanggal_lahir' => 'required|date',
             'nama_ibu' => 'required',
             'alamat' => 'required',
             'status_pernikahan' => 'required',
-            
             'area_kerja' => 'required',
             'jabatan' => 'required',
-
             'nama_keluarga' => 'required',
             'hp_keluarga' => 'required',
             'alamat_keluarga' => 'required',
-
             'foto_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'foto_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -96,17 +106,17 @@ class NasabahController extends Controller
                     $pathNpwp = $request->file('foto_npwp')->store('dokumen_nasabah', 'public');
                 }
 
-                // 1. Create User Login
+                // Create User
                 $user = User::create([
-                    'name' => $request->username, // Simpan ke field name juga
+                    'name' => $request->username, 
                     'username' => $request->username, 
                     'email' => $request->email,
-                    'password' => Hash::make('12345678'), // Password Default
+                    'password' => Hash::make('12345678'), 
                     'role' => 'Nasabah',
                     'email_verified_at' => now(),
                 ]);
 
-                // 2. Create Data Nasabah
+                // Create Nasabah
                 $nasabah = Nasabah::create([
                     'user_id' => $user->id,
                     'nik_ktp' => $request->nik_ktp,
@@ -115,10 +125,10 @@ class NasabahController extends Controller
                     'tanggal_lahir' => $request->tanggal_lahir,
                     'no_hp' => $request->no_hp,
                     'alamat' => $request->alamat,
-                    'kode_pos' => $request->kode_pos,
+                    'kode_pos' => $request->kode_pos ?? null, // Handle null jika tidak ada di form
                     'nama_ibu' => $request->nama_ibu,
                     'status_pernikahan' => $request->status_pernikahan,
-                    'rek_bsi_lama' => $request->rek_bsi_lama,
+                    'rek_bsi_lama' => $request->rek_bsi_lama ?? null,
                     'nama_keluarga_tidak_serumah' => $request->nama_keluarga,
                     'alamat_keluarga_tidak_serumah' => $request->alamat_keluarga,
                     'no_hp_keluarga_tidak_serumah' => $request->hp_keluarga,
@@ -126,14 +136,14 @@ class NasabahController extends Controller
                     'foto_npwp' => $pathNpwp,
                 ]);
 
-                // 3. Create Pekerjaan
+                // Create Pekerjaan
                 PekerjaanNasabah::create([
                     'nasabah_id' => $nasabah->id,
                     'area_kerja' => $request->area_kerja,
                     'jabatan' => $request->jabatan,
                 ]);
 
-                // 4. Create Pengajuan Rekening (Status awal: Draft)
+                // Create Pengajuan
                 $pengajuan = PengajuanRek::create([
                     'nasabah_id' => $nasabah->id,
                     'jenis_produk' => $request->jenis_produk,
@@ -141,7 +151,7 @@ class NasabahController extends Controller
                     'tanggal_input' => now(),
                 ]);
 
-                // 5. Log Status
+                // Log Status
                 StatusLog::create([
                     'pengajuan_id' => $pengajuan->id,
                     'user_id' => auth()->id(), 
@@ -149,13 +159,10 @@ class NasabahController extends Controller
                     'status_baru' => 'draft',
                     'catatan' => 'Input data baru oleh ' . auth()->user()->role,
                 ]);
-
             });
 
-            // LOGIKA REDIRECT DINAMIS
-            $prefix = strtolower($request->user()->role); // 'admin' atau 'funding'
-            
-            // Redirect ke index Nasabah sesuai role
+            // Redirect Dinamis
+            $prefix = strtolower(auth()->user()->role); 
             return redirect()->route($prefix . '.nasabah.index')->with('success', 'Data nasabah berhasil disimpan!');
 
         } catch (\Exception $e) {
@@ -166,13 +173,15 @@ class NasabahController extends Controller
     public function show($id)
     {
         $nasabah = Nasabah::with(['user', 'pekerjaan', 'pengajuan'])->findOrFail($id);
-        return view('funding.nasabah.show', compact('nasabah'));
+        $prefix = strtolower(auth()->user()->role);
+        return view($prefix . '.nasabah.show', compact('nasabah'));
     }
 
     public function edit($id)
     {
         $nasabah = Nasabah::with(['user', 'pekerjaan', 'pengajuan'])->findOrFail($id);
-        return view('funding.nasabah.edit', compact('nasabah'));
+        $prefix = strtolower(auth()->user()->role);
+        return view($prefix . '.nasabah.edit', compact('nasabah'));
     }
 
     public function update(Request $request, $id)
@@ -181,11 +190,9 @@ class NasabahController extends Controller
 
         $request->validate([
             'username' => 'required|string|max:255',
-            // Ignore current ID for unique checks
             'email' => 'required|email|unique:users,email,' . $nasabah->user_id,
             'jenis_produk' => 'required',
             'nik_ktp' => 'required|numeric|digits:16|unique:nasabah,nik_ktp,' . $id,
-            
             'npwp' => 'nullable|string',
             'no_hp' => 'required|numeric',
             'tempat_lahir' => 'required',
@@ -193,14 +200,11 @@ class NasabahController extends Controller
             'nama_ibu' => 'required',
             'alamat' => 'required',
             'status_pernikahan' => 'required',
-            
             'area_kerja' => 'required',
             'jabatan' => 'required',
-
             'nama_keluarga' => 'required',
             'hp_keluarga' => 'required',
             'alamat_keluarga' => 'required',
-
             'foto_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'foto_npwp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -208,34 +212,28 @@ class NasabahController extends Controller
         try {
             DB::transaction(function () use ($request, $nasabah) {
                 
-                // Update User
                 $nasabah->user->update([
                     'name' => $request->username,
                     'username' => $request->username,
                     'email' => $request->email,
                 ]);
 
-                // Handle File KTP
                 $pathKtp = $nasabah->foto_ktp; 
                 if ($request->hasFile('foto_ktp')) {
-                    // Hapus file lama jika ada
                     if ($nasabah->foto_ktp && Storage::disk('public')->exists($nasabah->foto_ktp)) {
                         Storage::disk('public')->delete($nasabah->foto_ktp);
                     }
                     $pathKtp = $request->file('foto_ktp')->store('dokumen_nasabah', 'public');
                 }
 
-                // Handle File NPWP
                 $pathNpwp = $nasabah->foto_npwp;
                 if ($request->hasFile('foto_npwp')) {
-                    // Hapus file lama jika ada
                     if ($nasabah->foto_npwp && Storage::disk('public')->exists($nasabah->foto_npwp)) {
                         Storage::disk('public')->delete($nasabah->foto_npwp);
                     }
                     $pathNpwp = $request->file('foto_npwp')->store('dokumen_nasabah', 'public');
                 }
 
-                // Update Data Nasabah
                 $nasabah->update([
                     'nik_ktp' => $request->nik_ktp,
                     'npwp' => $request->npwp,
@@ -243,7 +241,7 @@ class NasabahController extends Controller
                     'tanggal_lahir' => $request->tanggal_lahir,
                     'no_hp' => $request->no_hp,
                     'alamat' => $request->alamat,
-                    'kode_pos' => $request->kode_pos,
+                    'kode_pos' => $request->kode_pos ?? $nasabah->kode_pos,
                     'nama_ibu' => $request->nama_ibu,
                     'status_pernikahan' => $request->status_pernikahan,
                     'rek_bsi_lama' => $request->rek_bsi_lama,
@@ -254,7 +252,6 @@ class NasabahController extends Controller
                     'foto_npwp' => $pathNpwp,
                 ]);
 
-                // Update Pekerjaan (updateOrCreate untuk jaga-jaga jika data kosong sebelumnya)
                 $nasabah->pekerjaan()->updateOrCreate(
                     ['nasabah_id' => $nasabah->id],
                     [
@@ -263,17 +260,13 @@ class NasabahController extends Controller
                     ]
                 );
 
-                // Update Jenis Produk di Pengajuan (Hanya jika masih draft)
                 $pengajuanTerakhir = $nasabah->pengajuan()->latest()->first();
                 if ($pengajuanTerakhir && $pengajuanTerakhir->status == 'draft') {
                     $pengajuanTerakhir->update(['jenis_produk' => $request->jenis_produk]);
                 }
-
             });
 
-            // LOGIKA REDIRECT DINAMIS
-            $prefix = strtolower($request->user()->role); // 'admin' atau 'funding'
-
+            $prefix = strtolower(auth()->user()->role);
             return redirect()->route($prefix . '.nasabah.index')->with('success', 'Data nasabah berhasil diperbarui!');
 
         } catch (\Exception $e) {
@@ -285,7 +278,6 @@ class NasabahController extends Controller
     {
         $nasabah = Nasabah::findOrFail($id);
         
-        // Hapus file fisik
         if ($nasabah->foto_ktp && Storage::disk('public')->exists($nasabah->foto_ktp)) {
             Storage::disk('public')->delete($nasabah->foto_ktp);
         }
@@ -293,7 +285,6 @@ class NasabahController extends Controller
             Storage::disk('public')->delete($nasabah->foto_npwp);
         }
 
-        // Hapus User (Otomatis cascade hapus nasabah jika setting DB benar)
         $nasabah->user->delete(); 
         
         return redirect()->back()->with('success', 'Data nasabah telah dihapus.');
@@ -312,7 +303,6 @@ class NasabahController extends Controller
 
         try {
             Excel::import(new NasabahImport, $request->file('file_excel'));
-            
             return redirect()->back()->with('success', 'Data nasabah berhasil diimport!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal import: ' . $e->getMessage());

@@ -1,6 +1,6 @@
-@extends('layouts.funding')
+@extends('layouts.cabang')
 
-@section('title', 'Data Nasabah - SiFunding')
+@section('title', 'Data Nasabah - SiPUPR')
 
 @section('content')
 @php
@@ -14,13 +14,13 @@
         </div>
         
         <div class="flex flex-wrap gap-3">
-            <a href="{{ route($prefix . '.nasabah.export') }}" class="inline-flex items-center px-4 py-2 bg-white border border-bsi-teal text-bsi-teal rounded-lg text-sm font-medium hover:bg-teal-50 shadow-sm transition">
+            <a href="#" class="inline-flex items-center px-4 py-2 bg-white border border-bsi-teal text-bsi-teal rounded-lg text-sm font-medium hover:bg-teal-50 shadow-sm transition">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Export Excel
             </a>
 
             @if(Route::has($prefix . '.nasabah.import'))
-            <form action="{{ route($prefix . '.nasabah.import') }}" method="POST" enctype="multipart/form-data" class="inline-block">
+            <form action="#" method="POST" enctype="multipart/form-data" class="inline-block">
                 @csrf
                 <input type="file" name="file_excel" id="file_excel" class="hidden" onchange="this.form.submit()" accept=".xlsx, .xls, .csv">
                 
@@ -31,7 +31,7 @@
             </form>
             @endif
 
-            <a href="{{ route($prefix . '.nasabah.create') }}" class="inline-flex items-center px-4 py-2 bg-bsi-orange text-white rounded-lg text-sm font-bold shadow-md hover:bg-yellow-600 transition">
+            <a href="#" class="inline-flex items-center px-4 py-2 bg-bsi-orange text-white rounded-lg text-sm font-bold shadow-md hover:bg-yellow-600 transition">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Input Data Nasabah
             </a>
@@ -122,8 +122,8 @@
                         
                         <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium sticky right-0 bg-white shadow-sm">
                             <div class="flex justify-center items-center space-x-2">
-                                <a href="{{ route($prefix . '.nasabah.show', $item->id) }}" class="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition" title="Lihat Detail"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></a>
-                                <a href="{{ route($prefix . '.nasabah.edit', $item->id) }}" class="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition" title="Edit Data"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></a>
+                                <a href="#" class="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition" title="Lihat Detail"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></a>
+                                <a href="#" class="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition" title="Edit Data"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></a>
                                 <form action="{{ route($prefix . '.nasabah.destroy', $item->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus nasabah ini? Semua data terkait (akun & pengajuan) akan ikut terhapus.')">
                                     @csrf
                                     @method('DELETE')

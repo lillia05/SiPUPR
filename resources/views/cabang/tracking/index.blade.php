@@ -3,9 +3,9 @@
     $prefix = strtolower($userRole); 
 @endphp
 
-@extends('layouts.funding')
+@extends('layouts.cabang')
 
-@section('title', 'Tracking Berkas - SiFunding')
+@section('title', 'Tracking Berkas - SiPUPR')
 
 @section('content')
 

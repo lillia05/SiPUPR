@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NasabahRegistrationController;
+// 1. TAMBAHKAN IMPORT INI AGAR CONTROLLER TERBACA
+use App\Http\Controllers\NasabahController; 
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,12 +18,6 @@ Route::get('/', function () {
 });
 
 // =========================================================================
-// ROUTE PUBLIK
-// =========================================================================
-Route::get('/pengajuan-nasabah', [NasabahRegistrationController::class, 'create'])->name('nasabah.register.create');
-Route::post('/pengajuan-nasabah', [NasabahRegistrationController::class, 'store'])->name('nasabah.register.store');
-
-// =========================================================================
 // ROUTE AUTH
 // =========================================================================
 require __DIR__.'/auth.php';
@@ -31,17 +27,15 @@ require __DIR__.'/auth.php';
 // =========================================================================
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // --- LOGIKA REDIRECT DASHBOARD UTAMA ---
+    // --- LOGIKA REDIRECT DASHBOARD ---
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
-        // Jika Admin -> ke Dashboard PUPR
-        if ($user->role === 'Admin' || $user->username === 'admin') {
+        if ($user->role === 'pupr') {
             return redirect()->route('pupr.dashboard');
         }
         
-        // Jika Funding -> ke Dashboard Cabang
-        if ($user->role === 'Funding') {
+        if ($user->role === 'cabang') {
             return redirect()->route('cabang.dashboard');
         }
 
@@ -49,13 +43,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
 
-    // ================= GROUP 1: KEMENTRIAN PUPR (Admin) =================
-    // Menggunakan Data Dummy untuk Tampilan Frontend
-    Route::middleware(['role:Admin'])->prefix('pupr')->name('pupr.')->group(function () {
+    // ================= GROUP 1: KEMENTRIAN PUPR =================
+    Route::middleware(['role:pupr'])->prefix('pupr')->name('pupr.')->group(function () {
         
-        // 1. Dashboard PUPR
+        // Dashboard PUPR
         Route::get('/dashboard', function () {
-            return view('admin.dashboard', [
+            return view('pupr.dashboard', [
                 'totalNasabah'   => 150, 
                 'pendingCount'   => 12,
                 'readyCount'     => 5,
@@ -64,30 +57,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]); 
         })->name('dashboard');
 
-        // 2. Manajemen User (Dummy)
+        // Manajemen User
         Route::get('/users', function() {
             $users = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
-            return view('admin.users.index', compact('users')); 
+            return view('pupr.users.index', compact('users')); 
         })->name('users.index');
         
-        // 3. Dummy Nasabah & Tracking (Supaya Sidebar tidak error)
-        Route::get('/nasabah', function() { 
-            return view('funding.nasabah.index', ['nasabahs' => []]); 
-        })->name('nasabah.index');
-        
-        Route::get('/tracking', function() { 
-            return view('funding.tracking.index', ['pengajuans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10)]); 
-        })->name('tracking.index');
+        // Jika PUPR juga butuh melihat data nasabah, arahkan ke Controller juga
+        Route::get('/nasabah', [NasabahController::class, 'index'])->name('nasabah.index');
     });
 
 
-    // ================= GROUP 2: CABANG (Funding) =================
-    // Menggunakan Data Dummy untuk Tampilan Frontend
-    Route::middleware(['role:Funding'])->prefix('cabang')->name('cabang.')->group(function () {
+    // ================= GROUP 2: CABANG =================
+    Route::middleware(['role:cabang'])->prefix('cabang')->name('cabang.')->group(function () {
         
-        // 1. Dashboard Cabang
+        // Dashboard Cabang
         Route::get('/dashboard', function() {
-            return view('funding.dashboard', [
+            return view('cabang.dashboard', [
                 'totalNasabah'   => 50,
                 'pendingCount'   => 5,
                 'readyCount'     => 2,
@@ -96,20 +82,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('dashboard');
 
-        // 2. Dummy Nasabah
-        Route::get('/nasabah', function() { 
-            return view('funding.nasabah.index', ['nasabahs' => []]); 
-        })->name('nasabah.index');
+        // --- [PERBAIKAN DISINI] ---
+        // Menggunakan Controller, bukan function dummy lagi.
         
-        // 3. Dummy Tracking
+        // 1. Route Khusus (Import/Export) ditaruh SEBELUM resource
+        Route::get('nasabah/export', [NasabahController::class, 'export'])->name('nasabah.export');
+        Route::post('nasabah/import', [NasabahController::class, 'import'])->name('nasabah.import');
+
+        // 2. Route Resource (Otomatis membuat route index, create, store, edit, update, destroy)
+        // Ini akan membuat route bernama: cabang.nasabah.index, cabang.nasabah.store, dst.
+        Route::resource('nasabah', NasabahController::class);
+
+        // Tracking (Masih Dummy, nanti buatkan controllernya jika sudah ada)
         Route::get('/tracking', function() { 
-            return view('funding.tracking.index', ['pengajuans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10)]); 
+            return view('cabang.tracking.index', ['pengajuans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10)]); 
         })->name('tracking.index');
     });
 
 
     // ================= PROFILE (Bisa diakses keduanya) =================
-    Route::middleware(['role:Admin,Funding'])->group(function () {
+    Route::middleware(['role:pupr,cabang'])->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
