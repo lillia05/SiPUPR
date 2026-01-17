@@ -11,13 +11,12 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::whereIn('role', ['Admin', 'Funding']);
+        $query = User::whereIn('role', ['pupr', 'cabang']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('username', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%");
+                $q->where('username', 'like', "%$search%");
             });
         }
 
@@ -27,7 +26,7 @@ class UserController extends Controller
 
         $users = $query->latest()->paginate($request->input('per_page', 10));
 
-        return view('admin.users.index', compact('users'));
+        return view('pupr.users.index', compact('users'));
     }
 
 
@@ -35,38 +34,35 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        return view('admin.users.show', compact('user'));
+        return view('pupr.users.show', compact('user'));
     }
 
     public function create()
     {
-        return view('admin.users.create');
+        return view('pupr.users.create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'username' => ['required', 'string', 'max:255', 'unique:users'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'role'     => ['required', 'in:Admin,Funding'], 
+            'role'     => ['required', 'in:pupr,cabang'], 
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         User::create([
             'username' => $request->username,
-            'email'    => $request->email,
             'role'     => $request->role,
             'password' => Hash::make($request->password),
-            'status'   => 'active', 
         ]);
 
-        return redirect()->route('admin.users.index')->with('success', 'Akun berhasil dibuat.');
+        return redirect()->route('pupr.users.index')->with('success', 'Akun berhasil dibuat.');
     }
 
     public function edit($id)
     {
         $user = User::findOrFail($id);
-        return view('admin.users.edit', compact('user'));
+        return view('pupr.users.edit', compact('user'));
     }
 
     public function update(Request $request, $id)
@@ -75,16 +71,12 @@ class UserController extends Controller
 
         $request->validate([
             'username' => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'max:255', 'unique:users,email,'.$id],
-            'role'     => ['required', 'in:Admin,Funding'],
-            'status'   => ['required', 'in:active,inactive'], 
+            'role'     => ['required', 'in:pupr,cabang'],
         ]);
 
         $data = [
             'username' => $request->username,
-            'email'    => $request->email,
             'role'     => $request->role,
-            'status'   => $request->status,
         ];
 
         if ($request->filled('password')) {
@@ -96,7 +88,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return redirect()->route('admin.users.index')->with('success', 'Data pengguna diperbarui.');
+        return redirect()->route('pupr.users.index')->with('success', 'Data pengguna diperbarui.');
     }
     
 
@@ -110,6 +102,6 @@ class UserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil dihapus.');
+        return redirect()->route('pupr.users.index')->with('success', 'User berhasil dihapus.');
     }
 }

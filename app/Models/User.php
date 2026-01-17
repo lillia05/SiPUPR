@@ -21,12 +21,8 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'username', 
-        'email',
         'password',
-        'email_verified_at',
         'role', 
-        'status',
-        'avatar',
     ];
 
     /**
@@ -36,7 +32,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
     /**
@@ -45,19 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
     
-    public function sendEmailVerificationNotification()
-    {
-        // Cek Role, jika Nasabah pakai template khusus
-        if ($this->role === 'Nasabah') {
-            $this->notify(new NasabahVerifyEmail); 
-        } else {
-            // Jika Admin/Funding (misal register lewat admin), pakai template default Laravel
-            // Atau Anda bisa parent::sendEmailVerificationNotification(); jika tidak di-override
-            $this->notify(new \Illuminate\Auth\Notifications\VerifyEmail); 
-        }
-    }
 }

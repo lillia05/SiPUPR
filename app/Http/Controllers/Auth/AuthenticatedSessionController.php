@@ -31,12 +31,12 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        if ($user->role === 'Admin' || $user->username === 'admin') {
-            return redirect()->intended(route('admin.dashboard'));
+        if ($user->role === 'pupr' || $user->username === 'pupr') {
+            return redirect()->intended(route('pupr.dashboard'));
         }
 
-        if ($user->role === 'Funding') {
-            return redirect()->intended(route('funding.dashboard'));
+        if ($user->role === 'cabang') {
+            return redirect()->intended(route('cabang.dashboard'));
         }
 
         return redirect()->intended('/'); 

@@ -15,13 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('username')->unique()->nullable(); 
             $table->string('password'); 
-<<<<<<< HEAD
             $table->enum('role', ['cabang', 'pupr'])->default('pupr'); 
-            $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->string('avatar')->nullable();
-            $table->rememberToken();
-=======
->>>>>>> 5e476deaaf412f725062aec88d329fe46c149a8a
             $table->timestamps();
         });
     }
