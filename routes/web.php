@@ -1,13 +1,8 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\NasabahController;
-use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\NasabahRegistrationController;
-use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
-use App\Models\Nasabah;
-use App\Models\PengajuanRek;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,118 +10,105 @@ use App\Models\PengajuanRek;
 |--------------------------------------------------------------------------
 */
 
-// 1. Halaman Awal langsung lempar ke Login
+// 1. Halaman Awal -> Login
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
 // =========================================================================
-// ROUTE PUBLIK (PENDAFTARAN MANDIRI)
+// ROUTE PUBLIK
 // =========================================================================
 Route::get('/pengajuan-nasabah', [NasabahRegistrationController::class, 'create'])->name('nasabah.register.create');
 Route::post('/pengajuan-nasabah', [NasabahRegistrationController::class, 'store'])->name('nasabah.register.store');
 
 // =========================================================================
-// ROUTE AUTH (LOGIN, REGISTER, VERIFY EMAIL)
+// ROUTE AUTH
 // =========================================================================
 require __DIR__.'/auth.php';
 
-
 // =========================================================================
-// AREA YANG MEMBUTUHKAN LOGIN
+// AREA LOGIN (AUTH & VERIFIED)
 // =========================================================================
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // --- LOGIKA REDIRECT DASHBOARD ---
+    // --- LOGIKA REDIRECT DASHBOARD UTAMA ---
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
+        // Jika Admin -> ke Dashboard PUPR
         if ($user->role === 'Admin' || $user->username === 'admin') {
-            return redirect()->route('admin.dashboard');
+            return redirect()->route('pupr.dashboard');
         }
         
+        // Jika Funding -> ke Dashboard Cabang
         if ($user->role === 'Funding') {
-            return redirect()->route('funding.dashboard');
+            return redirect()->route('cabang.dashboard');
         }
 
         return redirect('/');
     })->name('dashboard');
 
 
-    // ================= GROUP KHUSUS ADMIN =================
-    Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {
+    // ================= GROUP 1: KEMENTRIAN PUPR (Admin) =================
+    // Menggunakan Data Dummy untuk Tampilan Frontend
+    Route::middleware(['role:Admin'])->prefix('pupr')->name('pupr.')->group(function () {
         
-        // 1. Dashboard Admin
+        // 1. Dashboard PUPR
         Route::get('/dashboard', function () {
             return view('admin.dashboard', [
-                'totalNasabah'   => Nasabah::count(),
-                'pendingCount'   => PengajuanRek::whereIn('status', ['draft', 'process'])->count(),
-                'readyCount'     => PengajuanRek::where('status', 'ready')->count(),
-                'doneCount'      => PengajuanRek::where('status', 'done')->count(),
-                'antreanTerbaru' => PengajuanRek::with('nasabah.user')->latest()->take(5)->get()
+                'totalNasabah'   => 150, 
+                'pendingCount'   => 12,
+                'readyCount'     => 5,
+                'doneCount'      => 133,
+                'antreanTerbaru' => [] 
             ]); 
         })->name('dashboard');
 
-        // 2. Manajemen User
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-        Route::post('/users', [UserController::class, 'store'])->name('users.store');
-        Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
-        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
-        Route::patch('/users/{id}/status', [UserController::class, 'toggleStatus'])->name('users.status');
-        Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
-        Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
-
-        // 3. Manajemen Nasabah (LENGKAP)
-        Route::get('/nasabah', [NasabahController::class, 'index'])->name('nasabah.index');
-        Route::get('/nasabah/export-excel', [NasabahController::class, 'export'])->name('nasabah.export'); 
-        Route::post('/nasabah/import', [NasabahController::class, 'import'])->name('nasabah.import');
-        Route::get('/nasabah/create', [NasabahController::class, 'create'])->name('nasabah.create');
-        Route::post('/nasabah', [NasabahController::class, 'store'])->name('nasabah.store');
-        Route::get('/nasabah/{id}/edit', [NasabahController::class, 'edit'])->name('nasabah.edit');
-        Route::put('/nasabah/{id}', [NasabahController::class, 'update'])->name('nasabah.update');
-        Route::delete('/nasabah/{id}', [NasabahController::class, 'destroy'])->name('nasabah.destroy');
-        Route::get('/nasabah/{id}', [NasabahController::class, 'show'])->name('nasabah.show');
-
-        // 4. Tracking
-        Route::get('/tracking', [MonitoringController::class, 'trackingPage'])->name('tracking.index');
-        Route::get('/tracking/detail', [MonitoringController::class, 'doTracking'])->name('tracking.show');
-        Route::post('/update-status/{id}', [MonitoringController::class, 'updateStatus'])->name('updateStatus');
+        // 2. Manajemen User (Dummy)
+        Route::get('/users', function() {
+            $users = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+            return view('admin.users.index', compact('users')); 
+        })->name('users.index');
         
-        Route::get('/tracking/cetak-tanda-terima', [MonitoringController::class, 'cetakPdf'])->name('tracking.print');
-        Route::get('/tracking/cetak-tanda-terima/{id}', [MonitoringController::class, 'cetakPdfDetail'])->name('tracking.print.detail');
+        // 3. Dummy Nasabah & Tracking (Supaya Sidebar tidak error)
+        Route::get('/nasabah', function() { 
+            return view('funding.nasabah.index', ['nasabahs' => []]); 
+        })->name('nasabah.index');
+        
+        Route::get('/tracking', function() { 
+            return view('funding.tracking.index', ['pengajuans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10)]); 
+        })->name('tracking.index');
     });
 
 
-    // ================= GROUP KHUSUS FUNDING =================
-    Route::middleware(['role:Funding'])->prefix('funding')->name('funding.')->group(function () {
+    // ================= GROUP 2: CABANG (Funding) =================
+    // Menggunakan Data Dummy untuk Tampilan Frontend
+    Route::middleware(['role:Funding'])->prefix('cabang')->name('cabang.')->group(function () {
         
-        // 1. Dashboard Funding
-        Route::get('/dashboard', [MonitoringController::class, 'index'])->name('dashboard');
+        // 1. Dashboard Cabang
+        Route::get('/dashboard', function() {
+            return view('funding.dashboard', [
+                'totalNasabah'   => 50,
+                'pendingCount'   => 5,
+                'readyCount'     => 2,
+                'doneCount'      => 43,
+                'antreanTerbaru' => []
+            ]);
+        })->name('dashboard');
 
-        // 2. Manajemen Nasabah (LENGKAP)
-        Route::get('/nasabah', [NasabahController::class, 'index'])->name('nasabah.index');
-        Route::get('/nasabah/export-excel', [NasabahController::class, 'export'])->name('nasabah.export');
-        Route::post('/nasabah/import', [NasabahController::class, 'import'])->name('nasabah.import');
-        Route::get('/nasabah/create', [NasabahController::class, 'create'])->name('nasabah.create');
-        Route::post('/nasabah', [NasabahController::class, 'store'])->name('nasabah.store');
-        Route::get('/nasabah/{id}/edit', [NasabahController::class, 'edit'])->name('nasabah.edit');
-        Route::put('/nasabah/{id}', [NasabahController::class, 'update'])->name('nasabah.update');
-        Route::delete('/nasabah/{id}', [NasabahController::class, 'destroy'])->name('nasabah.destroy');
-        Route::get('/nasabah/{id}', [NasabahController::class, 'show'])->name('nasabah.show');
-
-        // 3. Tracking Berkas
-        Route::get('/tracking', [MonitoringController::class, 'trackingPage'])->name('tracking.index');
-        Route::get('/tracking/detail', [MonitoringController::class, 'doTracking'])->name('tracking.show');
-        Route::post('/update-status/{id}', [MonitoringController::class, 'updateStatus'])->name('updateStatus'); // nama: funding.updateStatus
+        // 2. Dummy Nasabah
+        Route::get('/nasabah', function() { 
+            return view('funding.nasabah.index', ['nasabahs' => []]); 
+        })->name('nasabah.index');
         
-        // Cetak PDF
-        Route::get('/tracking/cetak-tanda-terima', [MonitoringController::class, 'cetakPdf'])->name('tracking.print');
-        Route::get('/tracking/cetak-tanda-terima/{id}', [MonitoringController::class, 'cetakPdfDetail'])->name('tracking.print.detail');
+        // 3. Dummy Tracking
+        Route::get('/tracking', function() { 
+            return view('funding.tracking.index', ['pengajuans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10)]); 
+        })->name('tracking.index');
     });
 
 
-    // ================= PROFILE (ADMIN & FUNDING) =================
+    // ================= PROFILE (Bisa diakses keduanya) =================
     Route::middleware(['role:Admin,Funding'])->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

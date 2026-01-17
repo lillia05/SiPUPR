@@ -3,127 +3,147 @@
 @section('title', 'Dashboard Funding')
 
 @section('content')
+    {{-- Header Banner --}}
     <div class="relative bg-gradient-to-r from-bsi-teal to-teal-600 rounded-2xl p-8 mb-10 shadow-lg overflow-hidden">
         <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-10 blur-2xl"></div>
         <div class="absolute bottom-0 right-20 -mb-10 w-40 h-40 rounded-full bg-bsi-orange opacity-20 blur-xl"></div>
 
         <div class="relative z-10 flex flex-col md:flex-row justify-between items-center">
             <div class="text-white mb-4 md:mb-0">
-                <h1 class="text-3xl font-heading font-bold">Selamat Datang, {{ auth()->user()->name ?? auth()->user()->username }}!</h1>
-                <p class="mt-2 text-teal-100 text-sm md:text-base">Siap melayani nasabah hari ini? Berikut ringkasan aktivitas distribusi buku tabungan.</p>
+                <h1 class="text-3xl font-heading font-bold">Monitoring Penyaluran Dana BSPS</h1>
+                <p class="mt-2 text-teal-100 text-sm md:text-base">Kementrian PKP 2025 - Realisasi per tahapan secara terpisah.</p>
             </div>
             <div class="text-white text-right">
-                <p class="text-xs font-medium uppercase tracking-wider opacity-80">Tanggal Hari Ini</p>
+                <p class="text-xs font-medium uppercase tracking-wider opacity-80">Update Terakhir</p>
                 <p class="text-xl font-bold font-heading">{{ date('d F Y') }}</p>
             </div>
         </div>
     </div>
 
+    {{-- Statistik Penyaluran (Dipisah Tahap 1, 2, dan 3) --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-gray-600"></div> 
+        {{-- Realisasi Tahap 1 --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-bsi-teal"></div> 
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Total Nasabah</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalNasabah }}</p>
-                    <p class="text-xs text-gray-400 mt-2">Data bulan ini</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase">Tahap 1</p>
+                    <p class="text-2xl font-bold text-bsi-teal mt-1">100%</p>
+                    <span class="text-[10px] px-2 py-0.5 bg-teal-50 text-teal-700 rounded-full font-bold uppercase">Selesai</span>
                 </div>
-                <div class="p-3 bg-indigo-50 rounded-lg text-gray-600">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <div class="p-2 bg-teal-50 rounded-lg text-bsi-teal">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
+        {{-- Realisasi Tahap 2 --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-bsi-teal"></div> 
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Menunggu Cetak</p>
-                    <p class="text-3xl font-bold text-yellow-600 mt-2">{{ $pendingCount }}</p>
-                    <p class="text-xs text-yellow-600 mt-2 bg-yellow-50 inline-block px-2 py-1 rounded">Menunggu Cetak</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase">Tahap 2</p>
+                    <p class="text-2xl font-bold text-bsi-teal mt-1">100%</p>
+                    <span class="text-[10px] px-2 py-0.5 bg-teal-50 text-teal-700 rounded-full font-bold uppercase">Selesai</span>
                 </div>
-                <div class="p-3 bg-yellow-50 rounded-lg text-yellow-500">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="p-2 bg-teal-50 rounded-lg text-bsi-teal">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
+        {{-- Realisasi Tahap 3 --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div> 
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Siap Diserahkan</p>
-                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ $readyCount }}</p>
-                    <p class="text-xs text-blue-600 mt-2 bg-blue-50 inline-block px-2 py-1 rounded">Siap Diserahkan</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase">Tahap 3</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">0.91%</p>
+                    <span class="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-bold uppercase">Proses</span>
                 </div>
-                <div class="p-3 bg-blue-50 rounded-lg text-blue-500">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
+                <div class="p-2 bg-blue-50 rounded-lg text-blue-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-bsi-teal"></div>
+        {{-- Total Sisa Saldo --}}
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-bsi-orange"></div>
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Sudah Diserahkan</p>
-                    <p class="text-3xl font-bold text-bsi-teal mt-2">{{ $doneCount }}</p>
-                    <p class="text-xs text-teal-700 mt-2 bg-teal-50 inline-block px-2 py-1 rounded">Selesai</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase">Total Sisa</p>
+                    <p class="text-2xl font-bold text-bsi-orange mt-1">Rp 2.72B</p>
+                    <span class="text-[10px] text-gray-400">Seluruh Deliniasi</span>
                 </div>
-                <div class="p-3 bg-teal-50 rounded-lg text-bsi-teal">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="p-2 bg-orange-50 rounded-lg text-bsi-orange">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
             </div>
         </div>
-
     </div>
 
+    {{-- Tabel Monitoring dengan Kolom Tahap 1 & 2 Terpisah --}}
     <div class="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <h3 class="text-lg font-heading font-semibold text-gray-800">Aktivitas Terbaru</h3>
-            <a href="{{ route('funding.tracking.index') }}" class="text-sm font-medium text-bsi-teal hover:text-teal-700 transition">Lihat Selengkapnya</a>
+            <h3 class="text-lg font-heading font-semibold text-gray-800">Detail Monitoring Per Deliniasi</h3>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-100">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 text-center">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Nasabah</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Jenis Produk</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Waktu</th>
-                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Progress</th>
-                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider"></th>
+                        <th rowspan="2" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase border-r">Deliniasi</th>
+                        <th colspan="2" class="px-6 py-2 text-xs font-bold text-teal-600 uppercase border-b border-r">Realisasi (%)</th>
+                        <th colspan="2" class="px-6 py-2 text-xs font-bold text-blue-600 uppercase border-b">Tahap Akhir</th>
+                    </tr>
+                    <tr>
+                        <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase">Tahap 1</th>
+                        <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase border-r">Tahap 2</th>
+                        <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase">T3 (%)</th>
+                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Sisa Saldo</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-100">
-                    @forelse($antreanTerbaru as $item)
+                <tbody class="bg-white divide-y divide-gray-100 text-center">
+                    @php
+                        $data = [
+                            ['label' => 'PESISIR', 'sub' => 'Wilayah Pesisir', 't1' => '100%', 't2' => '100%', 't3' => '1.13%', 'sisa' => '2,185,000,000'],
+                            ['label' => 'PERKOTAAN', 'sub' => 'Wilayah Urban', 't1' => '100%', 't2' => '100%', 't3' => '0.00%', 'sisa' => '450,000,000'],
+                            ['label' => 'PENERIMA TAMBAHAN', 'sub' => 'Alokasi Cadangan', 't1' => '100%', 't2' => '100%', 't3' => '0.00%', 'sisa' => '85,000,000'],
+                        ];
+                    @endphp
+
+                    @foreach($data as $row)
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="h-8 w-8 rounded-full bg-bsi-teal flex items-center justify-center text-xs font-bold text-white uppercase">
-                                    {{ substr($item->nasabah->user->name ?? 'N', 0, 2) }}
-                                </div>
-                                <div class="ml-3">
-                                    <div class="text-sm font-semibold text-gray-900">{{ $item->nasabah->user->username ?? 'Nasabah' }}</div>
-                                    <div class="text-xs text-gray-500">NIK: {{ $item->nasabah->nik_ktp }}</div>
+                        <td class="px-6 py-4 whitespace-nowrap text-left border-r">
+                            <div class="text-sm font-bold text-gray-900">{{ $row['label'] }}</div>
+                            <div class="text-[10px] text-gray-500 uppercase">{{ $row['sub'] }}</div>
+                        </td>
+                        <td class="px-4 py-4 text-sm font-semibold text-teal-600">{{ $row['t1'] }}</td>
+                        <td class="px-4 py-4 text-sm font-semibold text-teal-600 border-r">{{ $row['t2'] }}</td>
+                        <td class="px-4 py-4">
+                            <div class="flex flex-col items-center">
+                                <span class="text-sm text-gray-900 font-medium">{{ $row['t3'] }}</span>
+                                <div class="w-12 bg-gray-100 rounded-full h-1 mt-1">
+                                    <div class="bg-blue-500 h-1 rounded-full" style="width: {{ $row['t3'] }}"></div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->jenis_produk }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->created_at->diffForHumans() }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {{ $item->status == 'done' ? 'bg-teal-100 text-teal-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                {{ strtoupper($item->status) }}
-                            </span>
+                        <td class="px-6 py-4 text-right text-sm font-bold text-gray-900 leading-tight">
+                            {{ $row['sisa'] }}
                         </td>
                     </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="px-6 py-4 text-center text-gray-500 italic">Belum ada aktivitas pendaftaran.</td>
-                    </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
+                <tfoot class="bg-gray-50 font-bold">
+                    <tr>
+                        <td class="px-6 py-4 text-xs text-gray-900 uppercase border-r">Total Keseluruhan</td>
+                        <td class="px-4 py-4 text-sm text-teal-600">100%</td>
+                        <td class="px-4 py-4 text-sm text-teal-600 border-r">100%</td>
+                        <td class="px-4 py-4 text-sm text-blue-600">0.91%</td>
+                        <td class="px-6 py-4 text-right text-sm text-bsi-orange">2,720,000,000</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
