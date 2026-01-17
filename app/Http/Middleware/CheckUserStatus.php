@@ -16,17 +16,6 @@ class CheckUserStatus
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->status === 'inactive') {
-            
-            Auth::guard('web')->logout();
-
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect()->route('login')->withErrors([
-                'username' => 'Sesi berakhir. Akun Anda telah dinonaktifkan oleh Admin.',
-            ]);
-        }
 
         return $next($request);
     }

@@ -49,18 +49,6 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        $user = Auth::user();
-
-        if ($user->status === 'inactive') {
-            Auth::logout();
-
-            request()->session()->invalidate();
-            request()->session()->regenerateToken();
-
-            throw ValidationException::withMessages([
-                'username' => 'Akun Anda dinonaktifkan. Silakan hubungi admin.',
-            ]);
-        }
 
         RateLimiter::clear($this->throttleKey());
     }

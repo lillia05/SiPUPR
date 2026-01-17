@@ -25,7 +25,7 @@ class MonitoringController extends Controller
                             ->take(5)
                             ->get();
 
-        return view('funding.dashboard', compact(
+        return view('cabang.dashboard', compact(
             'totalNasabah', 
             'pendingCount', 
             'readyCount', 
@@ -58,7 +58,7 @@ class MonitoringController extends Controller
 
         $pengajuans->appends($request->all());
 
-        return view('funding.tracking.index', compact('pengajuans'));
+        return view('cabang.tracking.index', compact('pengajuans'));
     }
 
     public function updateStatus(Request $request, $id)
@@ -123,7 +123,7 @@ class MonitoringController extends Controller
             return redirect()->route($prefix . '.tracking.index')->with('error', 'Data nasabah tidak ditemukan.');
         }
 
-        return view('funding.tracking.show', compact('pengajuan'));
+        return view('cabang.tracking.show', compact('pengajuan'));
     }
 
     public function cetakPdf()
@@ -134,7 +134,7 @@ class MonitoringController extends Controller
                         })
                         ->get();
 
-        $pdf = Pdf::loadView('funding.tracking.pdf', compact('data_nasabah'));
+        $pdf = Pdf::loadView('cabang.tracking.pdf', compact('data_nasabah'));
 
         $pdf->setPaper('A4', 'portrait');
 
@@ -147,7 +147,7 @@ class MonitoringController extends Controller
 
         $data_nasabah = collect([$pengajuan->nasabah]);
 
-        $pdf = Pdf::loadView('funding.tracking.pdf', compact('data_nasabah'));
+        $pdf = Pdf::loadView('cabang.tracking.pdf', compact('data_nasabah'));
         $pdf->setPaper('A4', 'portrait');
 
         $namaFile = 'Tanda_Terima_' . str_replace(' ', '_', $pengajuan->nasabah->user->name) . '.pdf';

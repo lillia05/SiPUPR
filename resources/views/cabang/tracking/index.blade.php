@@ -16,10 +16,11 @@
         </div>
         
         <div class="flex gap-3">
-            @if(Route::has($prefix . '.tracking.print'))
-                <a href="{{ route($prefix . '.tracking.print') }}" class="inline-flex items-center px-4 py-2 bg-bsi-teal text-white rounded-lg text-sm font-bold shadow-md hover:bg-teal-700 transition">
+            {{-- Perbaikan: Menggunakan nama route tracking.cetak (pastikan route ini ada di web.php) --}}
+            @if(Route::has($prefix . '.tracking.cetak'))
+                <a href="{{ route($prefix . '.tracking.cetak') }}" class="inline-flex items-center px-4 py-2 bg-bsi-teal text-white rounded-lg text-sm font-bold shadow-md hover:bg-teal-700 transition">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Cetak Tanda Terima
+                    Cetak Tanda Terima (Massal)
                 </a>
             @endif
         </div>
@@ -94,7 +95,8 @@
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ $item->updated_at->diffForHumans() }}</td>
 
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                            @if(Route::has($prefix . '.updateStatus'))
+                            {{-- Perbaikan: Menggunakan nama route tracking.update --}}
+                            @if(Route::has($prefix . '.tracking.update'))
                                 @if($item->status == 'draft' || $item->status == 'process')
                                     <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-printing-{{ $item->id }}')"
                                         class="text-blue-600 border border-blue-200 bg-blue-50 px-3 py-1 rounded-full hover:bg-blue-100 transition text-xs font-bold">
@@ -105,8 +107,9 @@
                                         class="text-white bg-bsi-teal px-4 py-1.5 rounded-full text-xs font-bold hover:bg-teal-700 transition shadow-sm">
                                         Serahkan
                                     </button>
-                                @elseif($item->status == 'done' && Route::has($prefix . '.tracking.show'))
-                                    <a href="{{ route($prefix . '.tracking.show', ['search' => $item->nasabah->nik_ktp]) }}" 
+                                {{-- Perbaikan: Menggunakan route tracking.search untuk detail --}}
+                                @elseif($item->status == 'done' && Route::has($prefix . '.tracking.search'))
+                                    <a href="{{ route($prefix . '.tracking.search', ['search' => $item->nasabah->nik_ktp]) }}" 
                                        class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-full text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-bsi-teal transition shadow-sm">
                                         <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                         Lihat Detail
@@ -116,7 +119,8 @@
                         </td>
                     </tr>
 
-                    @if(Route::has($prefix . '.updateStatus'))
+                    @if(Route::has($prefix . '.tracking.update'))
+                        {{-- Modal Update Progress --}}
                         <x-modal name="confirm-printing-{{ $item->id }}" focusable maxWidth="sm">
                             <div class="p-6">
                                 <div class="flex items-center justify-center w-16 h-16 mx-auto bg-blue-500 rounded-full mb-5 shadow-lg border-4 border-blue-50">
@@ -138,8 +142,10 @@
                                     @endif
                                 </p>
 
-                                <form method="POST" action="{{ route($prefix . '.updateStatus', $item->id) }}"> 
+                                {{-- Perbaikan: Route ke tracking.update dan tambah @method('PUT') --}}
+                                <form method="POST" action="{{ route($prefix . '.tracking.update', $item->id) }}"> 
                                     @csrf
+                                    @method('PUT') 
                                     <input type="hidden" name="status" value="{{ $item->status == 'draft' ? 'process' : 'ready' }}">
 
                                     @if($item->status == 'process')
@@ -164,6 +170,7 @@
                             </div>
                         </x-modal>
 
+                        {{-- Modal Handover --}}
                         <x-modal name="confirm-handover-{{ $item->id }}" focusable maxWidth="sm">
                             <div class="p-6">
                                 <div class="flex items-center justify-center w-16 h-16 mx-auto bg-bsi-teal rounded-full mb-5 shadow-lg border-4 border-teal-50">
@@ -181,8 +188,10 @@
                                     Pastikan nasabah sudah menerima buku tabungan.
                                 </p>
 
-                                <form method="POST" action="{{ route($prefix . '.updateStatus', $item->id) }}"> 
+                                {{-- Perbaikan: Route ke tracking.update dan tambah @method('PUT') --}}
+                                <form method="POST" action="{{ route($prefix . '.tracking.update', $item->id) }}"> 
                                     @csrf
+                                    @method('PUT')
                                     <input type="hidden" name="status" value="done">
 
                                     <div class="grid grid-cols-2 gap-3">
@@ -205,9 +214,9 @@
             </table>
         </div>
 
+        {{-- Pagination --}}
         <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                
                 <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
                     <p class="text-sm text-gray-700 text-center sm:text-left">
                         Menampilkan <span class="font-medium">{{ $pengajuans->firstItem() }}</span> 

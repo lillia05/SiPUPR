@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\NasabahRegistrationController;
-// 1. TAMBAHKAN IMPORT INI AGAR CONTROLLER TERBACA
-use App\Http\Controllers\NasabahController; 
+use App\Http\Controllers\NasabahController;
+use App\Http\Controllers\UserController;       // Import UserController
+use App\Http\Controllers\MonitoringController; // Import MonitoringController
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,26 +12,28 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// 1. Halaman Awal -> Login
+// 1. Halaman Awal -> Redirect ke Login
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
 // =========================================================================
-// ROUTE AUTH
+// ROUTE AUTH (Login, Register, Logout, dll)
 // =========================================================================
 require __DIR__.'/auth.php';
 
 // =========================================================================
-// AREA LOGIN (AUTH & VERIFIED)
+// AREA LOGIN (HANYA AUTH, TIDAK BUTUH VERIFIED)
 // =========================================================================
-Route::middleware(['auth', 'verified'])->group(function () {
+// Perbaikan: Menghapus middleware 'verified' sesuai permintaan
+Route::middleware(['auth'])->group(function () {
 
     // --- LOGIKA REDIRECT DASHBOARD ---
+    // Mengarahkan user ke dashboard sesuai role saat mengakses /dashboard
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
-        if ($user->role === 'pupr') {
+        if ($user->role === 'pupr' || $user->username === 'pupr') {
             return redirect()->route('pupr.dashboard');
         }
         
@@ -39,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return redirect()->route('cabang.dashboard');
         }
 
+        // Default redirect jika role tidak dikenali
         return redirect('/');
     })->name('dashboard');
 
@@ -47,23 +50,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:pupr'])->prefix('pupr')->name('pupr.')->group(function () {
         
         // Dashboard PUPR
+        // (Anda bisa membuat Controller khusus Dashboard jika ingin data dinamis)
         Route::get('/dashboard', function () {
             return view('pupr.dashboard', [
-                'totalNasabah'   => 150, 
-                'pendingCount'   => 12,
-                'readyCount'     => 5,
-                'doneCount'      => 133,
+                // Contoh data dummy (bisa diganti dengan data dari database jika perlu)
+                'totalNasabah'   => \App\Models\User::where('role', 'Nasabah')->count(), 
+                'pendingCount'   => \App\Models\PengajuanRek::whereIn('status', ['draft', 'process'])->count(),
+                'readyCount'     => \App\Models\PengajuanRek::where('status', 'ready')->count(),
+                'doneCount'      => \App\Models\PengajuanRek::where('status', 'done')->count(),
                 'antreanTerbaru' => [] 
             ]); 
         })->name('dashboard');
 
-        // Manajemen User
-        Route::get('/users', function() {
-            $users = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
-            return view('pupr.users.index', compact('users')); 
-        })->name('users.index');
-        
-        // Jika PUPR juga butuh melihat data nasabah, arahkan ke Controller juga
+        // Manajemen User (Menggunakan UserController)
+        Route::resource('users', UserController::class);
+
+        // Jika PUPR juga butuh melihat data nasabah (Read Only/Full Access)
         Route::get('/nasabah', [NasabahController::class, 'index'])->name('nasabah.index');
     });
 
@@ -74,37 +76,41 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Dashboard Cabang
         Route::get('/dashboard', function() {
             return view('cabang.dashboard', [
-                'totalNasabah'   => 50,
-                'pendingCount'   => 5,
-                'readyCount'     => 2,
-                'doneCount'      => 43,
-                'antreanTerbaru' => []
+                // Contoh data ringkas untuk dashboard cabang
+                'totalNasabah'   => \App\Models\Nasabah::count(),
+                'pendingCount'   => \App\Models\PengajuanRek::whereIn('status', ['draft', 'process'])->count(),
+                'readyCount'     => \App\Models\PengajuanRek::where('status', 'ready')->count(),
+                'doneCount'      => \App\Models\PengajuanRek::where('status', 'done')->count(),
+                'antreanTerbaru' => \App\Models\PengajuanRek::with('nasabah.user')->latest()->take(5)->get()
             ]);
         })->name('dashboard');
 
-        // --- [PERBAIKAN DISINI] ---
-        // Menggunakan Controller, bukan function dummy lagi.
-        
-        // 1. Route Khusus (Import/Export) ditaruh SEBELUM resource
+        // --- MANAJEMEN NASABAH ---
+        // Route Import/Export diletakkan sebelum resource agar tidak tertimpa 'show'
         Route::get('nasabah/export', [NasabahController::class, 'export'])->name('nasabah.export');
         Route::post('nasabah/import', [NasabahController::class, 'import'])->name('nasabah.import');
-
-        // 2. Route Resource (Otomatis membuat route index, create, store, edit, update, destroy)
-        // Ini akan membuat route bernama: cabang.nasabah.index, cabang.nasabah.store, dst.
+        
+        // Route Resource Nasabah
         Route::resource('nasabah', NasabahController::class);
 
-        // Tracking (Masih Dummy, nanti buatkan controllernya jika sudah ada)
-        Route::get('/tracking', function() { 
-            return view('cabang.tracking.index', ['pengajuans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10)]); 
-        })->name('tracking.index');
+        // --- TRACKING PENGAJUAN (Menggunakan MonitoringController) ---
+        // Menampilkan daftar tracking
+        Route::get('/tracking', [MonitoringController::class, 'trackingPage'])->name('tracking.index');
+        
+        // Update status pengajuan
+        Route::put('/tracking/{id}', [MonitoringController::class, 'updateStatus'])->name('tracking.update');
+        
+        // Cetak PDF (Tanda Terima) per item
+        Route::get('/tracking/{id}/print', [MonitoringController::class, 'cetakPdfDetail'])->name('tracking.print');
+        
+        // Fitur pencarian tracking spesifik (jika ada form search terpisah)
+        Route::get('/tracking/search', [MonitoringController::class, 'doTracking'])->name('tracking.search');
     });
 
 
-    // ================= PROFILE (Bisa diakses keduanya) =================
-    Route::middleware(['role:pupr,cabang'])->group(function () {
-        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    });
+    // ================= PROFILE =================
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 });
