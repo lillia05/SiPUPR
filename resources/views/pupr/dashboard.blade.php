@@ -1,6 +1,6 @@
-@extends('layouts.funding')
+@extends('layouts.cabang')
 
-@section('title', 'Dashboard Admin')
+@section('title', 'Dashboard PUPR')
 
 @section('content')
     {{-- HEADER --}}
@@ -79,7 +79,7 @@
         <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
             <h3 class="text-lg font-heading font-semibold text-gray-800">Akun Terbaru</h3>
             {{-- Link ke Manajemen Akun untuk aksi lengkap --}}
-            <a href="{{ route('admin.users.index') }}" class="text-sm font-medium text-bsi-teal hover:text-teal-700 transition">Lihat Manajemen Akun</a>
+            <a href="{{ route('pupr.users.index') }}" class="text-sm font-medium text-bsi-teal hover:text-teal-700 transition">Lihat Manajemen Akun</a>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-100">
@@ -95,7 +95,7 @@
                 <tbody class="bg-white divide-y divide-gray-100">
                     
                     @php
-                        $latestUsers = \App\Models\User::whereIn('role', ['Admin', 'Funding'])
+                        $latestUsers = \App\Models\User::whereIn('role', ['pupr', 'cabang'])
                                         ->latest()
                                         ->take(5)
                                         ->get();
@@ -125,9 +125,9 @@
 
                         {{-- 5. Jabatan --}}
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            @if($user->role === 'Admin')
+                            @if($user->role === 'pupr')
                                 <span class="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800">Administrator</span>
-                            @elseif($user->role === 'Funding')
+                            @elseif($user->role === 'cabang')
                                 <span class="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">Funding Officer</span>
                             @else
                                 <span class="px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800">{{ $user->role }}</span>

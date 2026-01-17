@@ -18,11 +18,11 @@
 
             // Logika Penentuan Role
             if ($role === 'pupr') {
-                $roleLabel = 'Kementrian PUPR';
+                $roleLabel = 'pupr';
                 $prefix = 'pupr';
                 $isAdmin = true;
             } elseif ($role === 'cabang') {
-                $roleLabel = 'Cabang';
+                $roleLabel = 'cabang';
                 $prefix = 'cabang';
                 $isAdmin = false;
             }
@@ -36,7 +36,6 @@
             $isDashboardActive = request()->routeIs($prefix . '.dashboard');
             $isNasabahActive   = request()->routeIs($prefix . '.nasabah.*');
             $isTrackingActive  = request()->routeIs($prefix . '.tracking.*');
-            $isUsersActive     = request()->routeIs($prefix . '.users.*'); 
         @endphp
 
 
@@ -48,15 +47,7 @@
             Dashboard
         </a>
 
-        {{-- 2. MANAJEMEN AKUN (Hanya PUPR/Admin) --}}
-        @if($isAdmin)
-            <a href="{{ route('pupr.users.index') }}" 
-               class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors
-               {{ $isUsersActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                Manajemen Akun
-            </a>
-        @endif
+        
         
         {{-- 3. DATA NASABAH --}}
         <a href="{{ $nasabahRoute }}" 
