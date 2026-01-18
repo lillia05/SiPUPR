@@ -11,8 +11,8 @@
 
     <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
         <div>
-            <h1 class="text-2xl font-heading font-bold text-gray-800">Distribusi Tabungan</h1>
-            <p class="text-sm text-gray-500 mt-1">Pantau progres pencetakan dan distribusi buku tabungan.</p>
+            <h1 class="text-2xl font-heading font-bold text-gray-800">Distribusi Bantuan</h1>
+            <p class="text-sm text-gray-500 mt-1">Pantau progres distribusi penyaluran BSPS.</p>
         </div>
         
         <div class="flex gap-3">

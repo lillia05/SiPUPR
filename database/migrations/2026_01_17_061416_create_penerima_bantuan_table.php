@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('nama_pb');
             $table->string('nomor_rekening')->unique(); 
-            $table->string('desa');
-            $table->string('kecamatan');
-            $table->string('kabupaten');
             $table->string('deliniasi');
+            $table->string('kabupaten');
+            $table->string('kecamatan');
+            $table->string('desa');
             $table->decimal('total_alokasi_bantuan', 15, 2)->default(20000000); 
             $table->timestamps();
         });
