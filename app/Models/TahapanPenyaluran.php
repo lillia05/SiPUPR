@@ -15,10 +15,9 @@ class TahapanPenyaluran extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'tanggal_transaksi' => 'date',
-        'nominal' => 'decimal:2',
+        'tanggal_transaksi' => 'date',      
+        'nominal' => 'decimal:2',           
     ];
-
     public function penerima(): BelongsTo
     {
         return $this->belongsTo(PenerimaBantuan::class, 'penerima_bantuan_id');

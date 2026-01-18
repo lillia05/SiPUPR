@@ -52,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Data Nasabah
         Route::get('/nasabah', [NasabahController::class, 'index'])->name('nasabah.index');
+        Route::get('/nasabah/export', [NasabahController::class, 'export'])->name('nasabah.export');
 
         // --- TAMBAHAN: TRACKING BANTUAN UNTUK PUPR ---
         // Agar route 'pupr.tracking.index' tersedia dan tidak error di sidebar

@@ -13,10 +13,6 @@ class PenerimaBantuan extends Model
     protected $table = 'penerima_bantuan';
     
     protected $guarded = ['id']; 
-
-    /**
-     * Relasi ke tabel tahapan (One to Many)
-     */
     public function tahapan(): HasMany
     {
         return $this->hasMany(TahapanPenyaluran::class, 'penerima_bantuan_id');
