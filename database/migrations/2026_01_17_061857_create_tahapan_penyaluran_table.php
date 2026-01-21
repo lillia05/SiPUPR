@@ -22,7 +22,7 @@ return new class extends Migration
 
             $table->decimal('nominal', 15, 2);
 
-            $table->enum('status', ['DONE', 'not'])->default('not'); 
+            $table->enum('status', ['DONE', 'NOT'])->default('NOT'); 
 
 
             $table->date('tanggal_transaksi')->nullable();

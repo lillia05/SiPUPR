@@ -2,20 +2,25 @@
 
 namespace Database\Seeders;
 
-use App\Models\Nasabah;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
+
+// Models
+use App\Models\User;
+use App\Models\Batch; // Pastikan Model Batch sudah dibuat
 use App\Models\PenerimaBantuan;
+use App\Models\TahapanPenyaluran;
+// Model lain jika diperlukan (Nasabah, dll) biarkan saja
+use App\Models\Nasabah; 
 use App\Models\PengajuanRek;
 use App\Models\StatusLog;
-use App\Models\TahapanPenyaluran;
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Hash;
 
 class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
+        // 1. BUAT USER PETUGAS
         $cabang = User::create([
             'username' => 'cabang',
             'password' => Hash::make('12345678'),
@@ -27,9 +32,24 @@ class DemoDataSeeder extends Seeder
             'password' => Hash::make('12345678'),
             'role' => 'pupr',
         ]);
+
+        // 2. BUAT DATA BATCH (GELOMBANG)
+        $batch1 = Batch::create([
+            'nama_batch' => 'Batch 1 - Periode Januari',
+            'tanggal_mulai' => Carbon::create(2026, 1, 10),
+        ]);
+
+        $batch2 = Batch::create([
+            'nama_batch' => 'Batch 2 - Periode Februari',
+            'tanggal_mulai' => Carbon::create(2026, 2, 15),
+        ]);
+
+        // 3. BUAT DATA PENERIMA & TAHAPAN
         
+        // --- SKENARIO 1: SELESAI SEMUA (DONE) - Masuk Batch 1 ---
         $penerima1 = PenerimaBantuan::create([
-            'nama_pb' => 'Siti Aminah', // Progress 100%
+            'batch_id' => $batch1->id, // Relasi ke Batch 1
+            'nama_pb' => 'Siti Aminah', 
             'nomor_rekening' => '7000987654',
             'deliniasi' => 'Pesisir',
             'kabupaten' => 'Pesawaran',
@@ -66,9 +86,10 @@ class DemoDataSeeder extends Seeder
         ]);
 
 
-        // --- SKENARIO 2: BARU SELESAI TAHAP 1 (SEDANG BERJALAN) ---
+        // --- SKENARIO 2: BARU SELESAI TAHAP 1 (SEDANG BERJALAN) - Masuk Batch 1 ---
         $penerima2 = PenerimaBantuan::create([
-            'nama_pb' => 'Budi Santoso', // Progress ~50%
+            'batch_id' => $batch1->id, // Relasi ke Batch 1
+            'nama_pb' => 'Budi Santoso', 
             'nomor_rekening' => '7000123456',
             'deliniasi' => 'Pesisir',
             'kabupaten' => 'Lampung Selatan',
@@ -86,28 +107,29 @@ class DemoDataSeeder extends Seeder
             'tanggal_transaksi' => Carbon::now()->subDays(10),
         ]);
 
-        // Tahap 2: 7,5 Juta (BELUM)
+        // Tahap 2: 7,5 Juta (NOT)
         TahapanPenyaluran::create([
             'penerima_bantuan_id' => $penerima2->id,
             'tahap_ke' => 2,
             'nominal' => 7500000.00,
-            'status' => 'not',
+            'status' => 'NOT',
             'tanggal_transaksi' => null,
         ]);
 
-        // Tahap 3: 2,5 Juta (BELUM)
+        // Tahap 3: 2,5 Juta (NOT)
         TahapanPenyaluran::create([
             'penerima_bantuan_id' => $penerima2->id,
             'tahap_ke' => 3,
             'nominal' => 2500000.00,
-            'status' => 'not',
+            'status' => 'NOT',
             'tanggal_transaksi' => null,
         ]);
 
 
-        // --- SKENARIO 3: BELUM ADA PENCAIRAN SAMA SEKALI ---
+        // --- SKENARIO 3: BELUM ADA PENCAIRAN SAMA SEKALI - Masuk Batch 2 ---
         $penerima3 = PenerimaBantuan::create([
-            'nama_pb' => 'Joko Widodo', // Progress 0%
+            'batch_id' => $batch2->id, // Relasi ke Batch 2
+            'nama_pb' => 'Joko Widodo', 
             'nomor_rekening' => '7000555555',
             'deliniasi' => 'Perkotaan',
             'kabupaten' => 'Bandar Lampung',
@@ -116,14 +138,14 @@ class DemoDataSeeder extends Seeder
             'total_alokasi_bantuan' => 20000000.00,
         ]);
 
-        // Buat 3 tahapan tapi statusnya 'not' semua
+        // Buat 3 tahapan tapi statusnya 'NOT' semua
         $nominals = [10000000.00, 7500000.00, 2500000.00];
         foreach ($nominals as $index => $nominal) {
             TahapanPenyaluran::create([
                 'penerima_bantuan_id' => $penerima3->id,
                 'tahap_ke' => $index + 1,
                 'nominal' => $nominal,
-                'status' => 'not',
+                'status' => 'NOT',
                 'tanggal_transaksi' => null,
             ]);
         }

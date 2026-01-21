@@ -6,6 +6,9 @@ use App\Models\User;
 use App\Models\Nasabah;
 use App\Models\PengajuanRek;
 use App\Models\StatusLog;
+use App\Models\Batch;
+use App\Models\PenerimaBantuan; 
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf; 
@@ -34,33 +37,77 @@ class MonitoringController extends Controller
         ));
     }
 
+    /**
+     * Halaman Tracking Bantuan 
+     * Menggunakan tabel PenerimaBantuan & Batch
+     */
     public function trackingPage(Request $request)
     {
-        $query = PengajuanRek::with(['nasabah.user']);
+        $batches = Batch::orderBy('id', 'asc')->get();
+        
+        $activeBatchId = $request->query('batch_id', $batches->last()->id ?? null);
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('nasabah', function ($q) use ($search) {
-                $q->where('nik_ktp', 'like', "%$search%")
-                ->orWhereHas('user', function($u) use ($search) {
-                    $u->where('username', 'like', "%$search%");
-                });
-            });
+        $query = PenerimaBantuan::with(['tahapan', 'batch']);
+
+        // Filter by Batch (Jika ada batch)
+        if ($activeBatchId) {
+            $query->where('batch_id', $activeBatchId);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        // --- FILTER KOLOM ---
+        if ($request->filled('f_nama')) {
+            $query->where('nama_pb', 'like', '%' . $request->f_nama . '%');
+        }
+        if ($request->filled('f_deli')) {
+            $query->where('deliniasi', 'like', '%' . $request->f_deli . '%');
+        }
+        if ($request->filled('f_kab')) {
+            $query->where('kabupaten', 'like', '%' . $request->f_kab . '%');
+        }
+        if ($request->filled('f_kec')) {
+            $query->where('kecamatan', 'like', '%' . $request->f_kec . '%');
+        }
+        if ($request->filled('f_desa')) {
+            $query->where('desa', 'like', '%' . $request->f_desa . '%');
+        }
+
+        // --- FILTER STATUS TAHAPAN (Complex Relationship Query) ---
+        foreach ([1, 2, 3] as $tahap) {
+            $paramKey = "f_tahap_$tahap"; 
+            
+            if ($request->filled($paramKey)) {
+                $statusFilter = $request->$paramKey; 
+
+                if ($statusFilter == 'DONE') {
+                    $query->whereHas('tahapan', function($q) use ($tahap) {
+                        $q->where('tahap_ke', $tahap)->where('status', 'DONE');
+                    });
+                } else {
+                    $query->whereDoesntHave('tahapan', function($q) use ($tahap) {
+                        $q->where('tahap_ke', $tahap)->where('status', 'DONE');
+                    });
+                }
+            }
         }
 
         $perPage = $request->input('per_page', 10);
-        
-        $pengajuans = $query->latest()->paginate($perPage);
+        $penerima = $query->latest()->paginate($perPage)->withQueryString();
 
-        $pengajuans->appends($request->all());
-
-        return view('cabang.tracking.index', compact('pengajuans'));
+        return view('cabang.tracking.index', compact('batches', 'activeBatchId', 'penerima'));
     }
 
+    /**
+     * Halaman Detail Penerima Bantuan
+     */
+    public function show($id)
+    {
+        $penerima = PenerimaBantuan::with(['batch', 'tahapan'])->findOrFail($id);
+        
+        return view('cabang.tracking.show', compact('penerima'));
+    }
+
+
+    
     public function updateStatus(Request $request, $id)
     {
         $pengajuan = PengajuanRek::findOrFail($id);
@@ -107,7 +154,6 @@ class MonitoringController extends Controller
     public function doTracking(Request $request)
     {
         $prefix = strtolower(auth()->user()->role); 
-
         $search = $request->query('search');
 
         if (!$search) {
@@ -123,35 +169,16 @@ class MonitoringController extends Controller
             return redirect()->route($prefix . '.tracking.index')->with('error', 'Data nasabah tidak ditemukan.');
         }
 
-        return view('cabang.tracking.show', compact('pengajuan'));
+        return view('cabang.tracking.show_old', compact('pengajuan'));
     }
 
     public function cetakPdf()
     {
-        $data_nasabah = Nasabah::with(['user', 'pengajuan'])
-                        ->whereHas('pengajuan', function($q) {
-                            $q->whereIn('status', ['done']);
-                        })
-                        ->get();
-
-        $pdf = Pdf::loadView('cabang.tracking.pdf', compact('data_nasabah'));
-
-        $pdf->setPaper('A4', 'portrait');
-
-        return $pdf->download('Tanda_Terima_Tabungan_'.date('d-m-Y').'.pdf');
-    }
-
-    public function cetakPdfDetail($id)
-    {
-        $pengajuan = PengajuanRek::with(['nasabah.user'])->findOrFail($id);
-
-        $data_nasabah = collect([$pengajuan->nasabah]);
+        $data_nasabah = PenerimaBantuan::with(['tahapan', 'batch'])->get();
 
         $pdf = Pdf::loadView('cabang.tracking.pdf', compact('data_nasabah'));
         $pdf->setPaper('A4', 'portrait');
 
-        $namaFile = 'Tanda_Terima_' . str_replace(' ', '_', $pengajuan->nasabah->user->name) . '.pdf';
-
-        return $pdf->download($namaFile);
+        return $pdf->download('Laporan_Penyaluran_'.date('d-m-Y').'.pdf');
     }
 }

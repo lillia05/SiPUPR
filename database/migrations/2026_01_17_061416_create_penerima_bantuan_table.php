@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('penerima_bantuan', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('batch_id')->constrained('batches')->onDelete('cascade');
             $table->string('nama_pb');
             $table->string('nomor_rekening')->unique(); 
             $table->string('deliniasi');

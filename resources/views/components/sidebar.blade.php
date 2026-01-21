@@ -9,7 +9,7 @@
         
         @php
             $user = auth()->user();
-            $role = $user->role; // Sekarang sudah 'pupr' atau 'cabang'
+            $role = $user->role; 
             
             // Definisikan variabel default
             $roleLabel = 'User';
@@ -27,7 +27,7 @@
                 $isAdmin = false;
             }
 
-            // Generate Link berdasarkan prefix
+            // Generate Link
             $dashboardRoute = route($prefix . '.dashboard');
             $nasabahRoute   = route($prefix . '.nasabah.index');
             $trackingRoute  = route($prefix . '.tracking.index');
@@ -36,6 +36,10 @@
             $isDashboardActive = request()->routeIs($prefix . '.dashboard');
             $isNasabahActive   = request()->routeIs($prefix . '.nasabah.*');
             $isTrackingActive  = request()->routeIs($prefix . '.tracking.*');
+
+            // --- TAMBAHAN: AMBIL DATA BATCH DARI DATABASE ---
+            // Mengambil semua batch untuk ditampilkan di sub-menu
+            $sidebarBatches = \App\Models\Batch::orderBy('id', 'asc')->get();
         @endphp
 
 
@@ -48,8 +52,7 @@
         </a>
 
         
-        
-        {{-- 3. DATA NASABAH --}}
+        {{-- 2. DATA NASABAH --}}
         <a href="{{ $nasabahRoute }}" 
            class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors
            {{ $isNasabahActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
@@ -57,13 +60,62 @@
             Data Nasabah
         </a>
 
-        {{-- 4. TRACKING BANTUAN --}}
-        <a href="{{ $trackingRoute }}" 
-           class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors
-           {{ $isTrackingActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-            Tracking Bantuan
-        </a>
+        {{-- 3. TRACKING BANTUAN (DYNAMIC BATCH) --}}
+        <div x-data="{ open: {{ $isTrackingActive ? 'true' : 'false' }} }">
+            <button @click="open = !open" 
+               class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors focus:outline-none
+               {{ $isTrackingActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
+                
+                {{-- Bagian Kiri: Ikon & Teks --}}
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Tracking Bantuan
+                </div>
+
+                {{-- Bagian Kanan: Chevron Arrow --}}
+                <svg class="w-4 h-4 transform transition-transform duration-200" 
+                     :class="{'rotate-180': open}" 
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            {{-- SUB MENU ITEMS --}}
+            <div x-show="open" 
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="transform opacity-0 scale-95"
+                 x-transition:enter-end="transform opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="transform opacity-100 scale-100"
+                 x-transition:leave-end="transform opacity-0 scale-95"
+                 class="mt-1 space-y-1">
+                
+                {{-- Sub Item: Semua Batch (Link Reset) --}}
+                <a href="{{ $trackingRoute }}" 
+                   class="flex items-center pl-12 pr-4 py-2 text-xs font-medium rounded-lg transition-colors
+                   {{ request()->fullUrlIs($trackingRoute) && !request()->has('batch_id') ? 'text-bsi-teal bg-teal-50' : 'text-gray-500 hover:text-bsi-teal hover:bg-gray-50' }}">
+                   <span class="w-1.5 h-1.5 rounded-full bg-current mr-2"></span>
+                   Semua Batch
+                </a>
+
+                {{-- Sub Item: LOOPING BATCH DARI DATABASE --}}
+                @foreach($sidebarBatches as $batchItem)
+                    <a href="{{ $trackingRoute }}?batch_id={{ $batchItem->id }}" 
+                       class="flex items-center pl-12 pr-4 py-2 text-xs font-medium rounded-lg transition-colors
+                       {{ request('batch_id') == $batchItem->id ? 'text-bsi-teal bg-teal-50' : 'text-gray-500 hover:text-bsi-teal hover:bg-gray-50' }}">
+                       <span class="w-1.5 h-1.5 rounded-full {{ request('batch_id') == $batchItem->id ? 'bg-bsi-teal' : 'bg-gray-300' }} mr-2"></span>
+                       {{ $batchItem->nama_batch }}
+                    </a>
+                @endforeach
+                
+                {{-- Jika tidak ada batch --}}
+                @if($sidebarBatches->isEmpty())
+                    <span class="block pl-12 pr-4 py-2 text-xs text-gray-400 italic">Belum ada batch</span>
+                @endif
+
+            </div>
+        </div>
+
     </nav>
 
     {{-- FOOTER SIDEBAR --}}
