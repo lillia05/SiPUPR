@@ -14,6 +14,12 @@ class PenerimaBantuan extends Model
     protected $table = 'penerima_bantuan';
     
     protected $guarded = ['id']; 
+
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(Batch::class);
+    }
+
     public function tahapan(): HasMany
     {
         return $this->hasMany(TahapanPenyaluran::class, 'penerima_bantuan_id');
@@ -36,5 +42,13 @@ class PenerimaBantuan extends Model
             ->first();
 
         return $lastStage ? "Tahap " . $lastStage->tahap_ke : "Belum Cair";
+    }
+
+    /**
+     */
+    public function getStatusTahap($tahapKe)
+    {
+        $tahap = $this->tahapan->firstWhere('tahap_ke', $tahapKe);
+        return $tahap ? $tahap->status : 'NOT';
     }
 }

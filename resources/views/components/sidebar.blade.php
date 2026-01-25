@@ -11,12 +11,10 @@
             $user = auth()->user();
             $role = $user->role; 
             
-            // Definisikan variabel default
             $roleLabel = 'User';
             $prefix = 'home';
             $isAdmin = false;
 
-            // Logika Penentuan Role
             if ($role === 'pupr') {
                 $roleLabel = 'pupr';
                 $prefix = 'pupr';
@@ -27,18 +25,16 @@
                 $isAdmin = false;
             }
 
-            // Generate Link
             $dashboardRoute = route($prefix . '.dashboard');
             $nasabahRoute   = route($prefix . '.nasabah.index');
             $trackingRoute  = route($prefix . '.tracking.index');
 
-            // Cek Status Aktif
             $isDashboardActive = request()->routeIs($prefix . '.dashboard');
             $isNasabahActive   = request()->routeIs($prefix . '.nasabah.*');
             $isTrackingActive  = request()->routeIs($prefix . '.tracking.*');
 
-            // --- TAMBAHAN: AMBIL DATA BATCH DARI DATABASE ---
-            // Mengambil semua batch untuk ditampilkan di sub-menu
+            $isTrackingActive = request()->routeIs($prefix . '.tracking.*');
+            $currentBatchId = request()->query('batch_id');
             $sidebarBatches = \App\Models\Batch::orderBy('id', 'asc')->get();
         @endphp
 
@@ -66,13 +62,11 @@
                class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors focus:outline-none
                {{ $isTrackingActive ? 'bg-gradient-to-r from-teal-50 to-white text-bsi-teal border-l-4 border-bsi-teal' : 'text-gray-600 hover:bg-gray-50 hover:text-bsi-teal' }}">
                 
-                {{-- Bagian Kiri: Ikon & Teks --}}
                 <div class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                     Tracking Bantuan
                 </div>
 
-                {{-- Bagian Kanan: Chevron Arrow --}}
                 <svg class="w-4 h-4 transform transition-transform duration-200" 
                      :class="{'rotate-180': open}" 
                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,28 +84,21 @@
                  x-transition:leave-end="transform opacity-0 scale-95"
                  class="mt-1 space-y-1">
                 
-                {{-- Sub Item: Semua Batch (Link Reset) --}}
-                <a href="{{ $trackingRoute }}" 
+                <a href="{{ route($prefix . '.tracking.index') }}" 
                    class="flex items-center pl-12 pr-4 py-2 text-xs font-medium rounded-lg transition-colors
-                   {{ request()->fullUrlIs($trackingRoute) && !request()->has('batch_id') ? 'text-bsi-teal bg-teal-50' : 'text-gray-500 hover:text-bsi-teal hover:bg-gray-50' }}">
-                   <span class="w-1.5 h-1.5 rounded-full bg-current mr-2"></span>
-                   Semua Batch
+                   {{ ($isTrackingActive && is_null($currentBatchId)) ? 'text-bsi-teal bg-teal-50 font-bold' : 'text-gray-500 hover:text-bsi-teal hover:bg-gray-50' }}">
+                   <span class="w-1.5 h-1.5 rounded-full {{ ($isTrackingActive && is_null($currentBatchId)) ? 'bg-bsi-teal' : 'bg-gray-400' }} mr-2"></span>
+                   Semua Data
                 </a>
 
-                {{-- Sub Item: LOOPING BATCH DARI DATABASE --}}
-                @foreach($sidebarBatches as $batchItem)
-                    <a href="{{ $trackingRoute }}?batch_id={{ $batchItem->id }}" 
+                @foreach($sidebarBatches as $batch)
+                    <a href="{{ route($prefix . '.tracking.index', ['batch_id' => $batch->id]) }}" 
                        class="flex items-center pl-12 pr-4 py-2 text-xs font-medium rounded-lg transition-colors
-                       {{ request('batch_id') == $batchItem->id ? 'text-bsi-teal bg-teal-50' : 'text-gray-500 hover:text-bsi-teal hover:bg-gray-50' }}">
-                       <span class="w-1.5 h-1.5 rounded-full {{ request('batch_id') == $batchItem->id ? 'bg-bsi-teal' : 'bg-gray-300' }} mr-2"></span>
-                       {{ $batchItem->nama_batch }}
+                       {{ ($currentBatchId == $batch->id) ? 'text-bsi-teal bg-teal-50 font-bold' : 'text-gray-500 hover:text-bsi-teal hover:bg-gray-50' }}">
+                       <span class="w-1.5 h-1.5 rounded-full {{ ($currentBatchId == $batch->id) ? 'bg-bsi-teal' : 'bg-gray-400' }} mr-2"></span>
+                       {{ $batch->nama_batch }}
                     </a>
                 @endforeach
-                
-                {{-- Jika tidak ada batch --}}
-                @if($sidebarBatches->isEmpty())
-                    <span class="block pl-12 pr-4 py-2 text-xs text-gray-400 italic">Belum ada batch</span>
-                @endif
 
             </div>
         </div>

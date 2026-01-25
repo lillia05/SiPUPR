@@ -45,16 +45,14 @@ class MonitoringController extends Controller
     {
         $batches = Batch::orderBy('id', 'asc')->get();
         
-        $activeBatchId = $request->query('batch_id', $batches->last()->id ?? null);
+        $activeBatchId = $request->query('batch_id'); 
 
         $query = PenerimaBantuan::with(['tahapan', 'batch']);
 
-        // Filter by Batch (Jika ada batch)
         if ($activeBatchId) {
             $query->where('batch_id', $activeBatchId);
         }
 
-        // --- FILTER KOLOM ---
         if ($request->filled('f_nama')) {
             $query->where('nama_pb', 'like', '%' . $request->f_nama . '%');
         }
@@ -71,7 +69,6 @@ class MonitoringController extends Controller
             $query->where('desa', 'like', '%' . $request->f_desa . '%');
         }
 
-        // --- FILTER STATUS TAHAPAN (Complex Relationship Query) ---
         foreach ([1, 2, 3] as $tahap) {
             $paramKey = "f_tahap_$tahap"; 
             
@@ -93,20 +90,63 @@ class MonitoringController extends Controller
         $perPage = $request->input('per_page', 10);
         $penerima = $query->latest()->paginate($perPage)->withQueryString();
 
-        return view('cabang.tracking.index', compact('batches', 'activeBatchId', 'penerima'));
+        return view('pupr.tracking.index', compact('batches', 'activeBatchId', 'penerima'));
     }
 
-    /**
-     * Halaman Detail Penerima Bantuan
-     */
     public function show($id)
     {
         $penerima = PenerimaBantuan::with(['batch', 'tahapan'])->findOrFail($id);
         
-        return view('cabang.tracking.show', compact('penerima'));
+        return view('pupr.tracking.show', compact('penerima'));
     }
 
+    public function updateTahapan(Request $request, $id)
+    {
+        $request->validate([
+            'tahap_ke' => 'required|in:1,2,3',
+            'status'   => 'required|in:DONE,NOT',
+        ]);
 
+        $penerima = PenerimaBantuan::findOrFail($id);
+        $tahapKe = (int)$request->tahap_ke;
+
+        if ($request->status == 'DONE' && $tahapKe > 1) {
+            $prevTahap = $penerima->tahapan()->where('tahap_ke', $tahapKe - 1)->first();
+            if (!$prevTahap || $prevTahap->status !== 'DONE') {
+                return redirect()->back()->with('error', "Gagal! Tahap " . ($tahapKe - 1) . " harus selesai dulu.");
+            }
+        }
+
+        if ($request->status == 'NOT' && $tahapKe < 3) {
+            $nextTahap = $penerima->tahapan()->where('tahap_ke', $tahapKe + 1)->first();
+            if ($nextTahap && $nextTahap->status == 'DONE') {
+                return redirect()->back()->with('error', "Gagal! Tahap " . ($tahapKe + 1) . " harus dibatalkan terlebih dahulu.");
+            }
+        }
+
+        $defaultNominal = 0;
+        if ($tahapKe == 1) $defaultNominal = 10000000;
+        elseif ($tahapKe == 2) $defaultNominal = 7500000;
+        elseif ($tahapKe == 3) $defaultNominal = 2500000;
+
+        $existingTahap = $penerima->tahapan()->where('tahap_ke', $tahapKe)->first();
+        
+        $nominalToSave = $request->filled('nominal') 
+                            ? $request->nominal 
+                            : ($existingTahap ? $existingTahap->nominal : $defaultNominal);
+
+        $penerima->tahapan()->updateOrCreate(
+            ['tahap_ke' => $tahapKe],
+            [
+                'status' => $request->status,
+                'nominal' => $nominalToSave,
+                'tanggal_transaksi' => ($request->status == 'DONE') ? now() : null 
+            ]
+        );
+
+        $msg = ($request->status == 'DONE') ? "selesai" : "dibatalkan";
+        return redirect()->back()->with('success', "Status Tahap $tahapKe berhasil $msg!");
+    }
     
     public function updateStatus(Request $request, $id)
     {

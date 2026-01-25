@@ -54,12 +54,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/nasabah', [NasabahController::class, 'index'])->name('nasabah.index');
         Route::get('/nasabah/export', [NasabahController::class, 'export'])->name('nasabah.export');
 
-        // --- TAMBAHAN: TRACKING BANTUAN UNTUK PUPR ---
-        // Agar route 'pupr.tracking.index' tersedia dan tidak error di sidebar
+        // TRACKING BANTUAN 
         Route::get('/tracking', [MonitoringController::class, 'trackingPage'])->name('tracking.index');
         Route::get('/tracking/search', [MonitoringController::class, 'doTracking'])->name('tracking.search');
-        // Jika PUPR boleh update, uncomment baris bawah ini:
-        // Route::put('/tracking/{id}', [MonitoringController::class, 'updateStatus'])->name('tracking.update');
+        Route::get('tracking/{id}', [MonitoringController::class, 'show'])->name('tracking.show'); 
+        Route::put('tracking/{id}/update-tahap', [MonitoringController::class, 'updateTahapan'])->name('tracking.update_tahap'); 
     });
 
 
