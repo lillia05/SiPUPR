@@ -37,10 +37,6 @@ class MonitoringController extends Controller
         ));
     }
 
-    /**
-     * Halaman Tracking Bantuan 
-     * Menggunakan tabel PenerimaBantuan & Batch
-     */
     public function trackingPage(Request $request)
     {
         $batches = Batch::orderBy('id', 'asc')->get();
@@ -54,8 +50,17 @@ class MonitoringController extends Controller
         }
 
         if ($request->filled('f_nama')) {
-            $query->where('nama_pb', 'like', '%' . $request->f_nama . '%');
-        }
+        $keyword = $request->f_nama;
+        
+        $query->where(function($q) use ($keyword) {
+            $q->where('nama_pb', 'like', '%' . $keyword . '%')
+              ->orWhere('nomor_rekening', 'like', '%' . $keyword . '%')
+              ->orWhere('deliniasi', 'like', '%' . $keyword . '%')
+              ->orWhere('kabupaten', 'like', '%' . $keyword . '%')
+              ->orWhere('kecamatan', 'like', '%' . $keyword . '%')
+              ->orWhere('desa', 'like', '%' . $keyword . '%');
+        });
+    }
         if ($request->filled('f_deli')) {
             $query->where('deliniasi', 'like', '%' . $request->f_deli . '%');
         }

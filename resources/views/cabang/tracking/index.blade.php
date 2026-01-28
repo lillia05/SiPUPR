@@ -1,6 +1,11 @@
 @php
     $userRole = auth()->user()->role;
     $prefix = strtolower($userRole); 
+    
+    $uniqueDeliniasi = \App\Models\PenerimaBantuan::distinct()->pluck('deliniasi')->filter();
+    $uniqueKabupaten = \App\Models\PenerimaBantuan::distinct()->pluck('kabupaten')->filter();
+    $uniqueKecamatan = \App\Models\PenerimaBantuan::distinct()->pluck('kecamatan')->filter();
+    $uniqueDesa      = \App\Models\PenerimaBantuan::distinct()->pluck('desa')->filter();
 @endphp
 
 @extends('layouts.cabang')
@@ -9,238 +14,240 @@
 
 @section('content')
 
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-        <div>
-            <h1 class="text-2xl font-heading font-bold text-gray-800">Distribusi Tabungan</h1>
-            <p class="text-sm text-gray-500 mt-1">Pantau progres pencetakan dan distribusi buku tabungan.</p>
-        </div>
-        
-        <div class="flex gap-3">
-            {{-- Perbaikan: Menggunakan nama route tracking.cetak (pastikan route ini ada di web.php) --}}
-            @if(Route::has($prefix . '.tracking.cetak'))
-                <a href="{{ route($prefix . '.tracking.cetak') }}" class="inline-flex items-center px-4 py-2 bg-bsi-teal text-white rounded-lg text-sm font-bold shadow-md hover:bg-teal-700 transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Cetak Tanda Terima (Massal)
-                </a>
-            @endif
-        </div>
-    </div>
+    <div x-data="{ openConfirmModal: false, selectedUrl: '', selectedTahap: '', actionType: '' }">
 
-    @if(session('success'))
-        <div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 text-sm rounded shadow-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-        <form action="{{ route($prefix . '.tracking.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
-            <div class="relative flex-1">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <input type="text" name="search" value="{{ request('search') }}" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-bsi-teal focus:border-bsi-teal transition" placeholder="Cari Nama Nasabah / NIK...">
-            </div>
-            <select name="status" class="block w-full md:w-48 pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-bsi-teal focus:border-bsi-teal bg-white text-gray-700">
-                <option value="">Semua Progress</option>
-                <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Menunggu Verifikasi</option>
-                <option value="process" {{ request('status') == 'process' ? 'selected' : '' }}>Menunggu Cetak</option>
-                <option value="ready" {{ request('status') == 'ready' ? 'selected' : '' }}>Siap Diserahkan</option>
-                <option value="done" {{ request('status') == 'done' ? 'selected' : '' }}>Selesai</option>
-            </select>
-            <button type="submit" class="px-6 py-2 bg-bsi-teal text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition">Filter</button>
-        </form>
-    </div>
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nasabah</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Jenis Produk</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Tanggal Masuk</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Progres</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Update Terakhir</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($pengajuans as $index => $item)
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $pengajuans->firstItem() + $index }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $item->nasabah->user->username ?? 'Nasabah' }}</div>
-                            <div class="text-xs text-gray-500">NIK: {{ $item->nasabah->nik_ktp }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->jenis_produk }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->created_at->format('d M Y') }}</td>
-                        
-                        <td class="px-6 py-4 whitespace-nowrap align-middle">
-                            <div class="flex items-center space-x-1">
-                                <div class="w-8 h-2 rounded-full bg-bsi-teal" title="Input"></div>
-                                <div class="w-8 h-2 rounded-full {{ in_array($item->status, ['process', 'ready', 'done']) ? 'bg-yellow-400' : 'bg-gray-200' }}" title="Proses Cetak"></div>
-                                <div class="w-8 h-2 rounded-full {{ in_array($item->status, ['ready', 'done']) ? 'bg-blue-500' : 'bg-gray-200' }}" title="Siap Serah"></div>
-                                <div class="w-8 h-2 rounded-full {{ $item->status == 'done' ? 'bg-bsi-teal' : 'bg-gray-200' }}" title="Selesai"></div>
-                            </div>
-                            <span class="text-xs font-medium mt-1 block">
-                                @if($item->status == 'draft') <span class="text-gray-400">Menunggu Verifikasi</span>
-                                @elseif($item->status == 'process') <span class="text-yellow-600">Menunggu Cetak</span>
-                                @elseif($item->status == 'ready') <span class="text-blue-600">Siap Diserahkan</span>
-                                @else <span class="text-bsi-teal">Selesai</span>
-                                @endif
+        <div class="mb-6 space-y-4">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-2xl font-heading font-bold text-gray-800">Distribusi Bantuan</h1>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Pantau progres penyaluran bantuan 
+                        @if(isset($activeBatchId) && $currentBatch = $batches->find($activeBatchId))
+                            <span class="ml-1 px-2 py-0.5 rounded bg-teal-50 text-bsi-teal text-xs font-bold border border-teal-100">
+                                {{ $currentBatch->nama_batch }}
                             </span>
-                        </td>
+                        @else
+                            <span class="ml-1 px-2 py-0.5 rounded bg-teal-50 text-bsi-teal text-xs font-bold border border-teal-100">
+                                Semua Data
+                            </span>
+                        @endif
+                    </p>
+                </div>
+            </div>
 
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ $item->updated_at->diffForHumans() }}</td>
+            <form action="{{ route($prefix . '.tracking.index') }}" method="GET" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
+                <input type="hidden" name="batch_id" value="{{ request('batch_id') }}">
+                <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                
+                @foreach(['f_deli', 'f_kab', 'f_kec', 'f_desa', 'f_tahap_1', 'f_tahap_2', 'f_tahap_3'] as $field)
+                    @if(request($field)) <input type="hidden" name="{{ $field }}" value="{{ request($field) }}"> @endif
+                @endforeach
 
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                            {{-- Perbaikan: Menggunakan nama route tracking.update --}}
-                            @if(Route::has($prefix . '.tracking.update'))
-                                @if($item->status == 'draft' || $item->status == 'process')
-                                    <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-printing-{{ $item->id }}')"
-                                        class="text-blue-600 border border-blue-200 bg-blue-50 px-3 py-1 rounded-full hover:bg-blue-100 transition text-xs font-bold">
-                                        Update Progress
-                                    </button>
-                                @elseif($item->status == 'ready')
-                                    <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-handover-{{ $item->id }}')"
-                                        class="text-white bg-bsi-teal px-4 py-1.5 rounded-full text-xs font-bold hover:bg-teal-700 transition shadow-sm">
-                                        Serahkan
-                                    </button>
-                                {{-- Perbaikan: Menggunakan route tracking.search untuk detail --}}
-                                @elseif($item->status == 'done' && Route::has($prefix . '.tracking.search'))
-                                    <a href="{{ route($prefix . '.tracking.search', ['search' => $item->nasabah->nik_ktp]) }}" 
-                                       class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-full text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-bsi-teal transition shadow-sm">
-                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                        Lihat Detail
-                                    </a>
-                                @endif
-                            @endif
-                        </td>
-                    </tr>
-
-                    @if(Route::has($prefix . '.tracking.update'))
-                        {{-- Modal Update Progress --}}
-                        <x-modal name="confirm-printing-{{ $item->id }}" focusable maxWidth="sm">
-                            <div class="p-6">
-                                <div class="flex items-center justify-center w-16 h-16 mx-auto bg-blue-500 rounded-full mb-5 shadow-lg border-4 border-blue-50">
-                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                    </svg>
-                                </div>
-                                
-                                <h2 class="text-lg font-bold text-center text-gray-900 mb-2">
-                                    Konfirmasi {{ $item->status == 'draft' ? 'Proses' : 'Cetak' }}
-                                </h2>
-
-                                <p class="text-center text-gray-500 text-sm mb-6 leading-relaxed">
-                                    Ubah status menjadi <b>{{ $item->status == 'draft' ? 'Menunggu Cetak' : 'Siap Diserahkan' }}</b>?<br>
-                                    @if($item->status == 'process')
-                                        Silakan input nomor rekening yang telah terbit.
-                                    @else
-                                        Pastikan data berkas nasabah sudah valid.
-                                    @endif
-                                </p>
-
-                                {{-- Perbaikan: Route ke tracking.update dan tambah @method('PUT') --}}
-                                <form method="POST" action="{{ route($prefix . '.tracking.update', $item->id) }}"> 
-                                    @csrf
-                                    @method('PUT') 
-                                    <input type="hidden" name="status" value="{{ $item->status == 'draft' ? 'process' : 'ready' }}">
-
-                                    @if($item->status == 'process')
-                                        <div class="mb-6 text-left bg-gray-50 p-3 rounded-xl border border-gray-200">
-                                            <label for="no_rek" class="block text-xs font-bold text-gray-700 uppercase mb-1 ml-1">
-                                                Nomor Rekening Baru <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="number" name="no_rek" id="no_rek" required 
-                                                placeholder="Masukkan No. Rek..."
-                                                class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm py-2 px-3 transition">
-                                        </div>
-                                    @endif
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <button type="button" x-on:click="$dispatch('close')" class="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition">
-                                            Batal
-                                        </button>
-                                        <button type="submit" class="w-full px-4 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition">
-                                            Ya, Update
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </x-modal>
-
-                        {{-- Modal Handover --}}
-                        <x-modal name="confirm-handover-{{ $item->id }}" focusable maxWidth="sm">
-                            <div class="p-6">
-                                <div class="flex items-center justify-center w-16 h-16 mx-auto bg-bsi-teal rounded-full mb-5 shadow-lg border-4 border-teal-50">
-                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                </div>
-                                
-                                <h2 class="text-lg font-bold text-center text-gray-900 mb-2">
-                                    Konfirmasi Serah Terima
-                                </h2>
-
-                                <p class="text-center text-gray-500 text-sm mb-6 leading-relaxed">
-                                    Ubah status menjadi <b>Selesai</b>?<br>
-                                    Pastikan nasabah sudah menerima buku tabungan.
-                                </p>
-
-                                {{-- Perbaikan: Route ke tracking.update dan tambah @method('PUT') --}}
-                                <form method="POST" action="{{ route($prefix . '.tracking.update', $item->id) }}"> 
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="done">
-
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <button type="button" x-on:click="$dispatch('close')" class="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition">
-                                            Batal
-                                        </button>
-                                        <button type="submit" class="w-full px-4 py-2.5 bg-bsi-teal text-white font-bold rounded-xl shadow-md hover:bg-teal-700 transition">
-                                            Ya, Selesai
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </x-modal>
-                    @endif
-
-                    @empty
-                    <tr><td colspan="7" class="px-6 py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" name="f_nama" value="{{ request('f_nama') }}" 
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-bsi-teal focus:border-bsi-teal sm:text-sm" 
+                        placeholder="Cari Nama Penerima, No. Rekening, atau Wilayah...">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-bsi-teal text-white rounded-lg text-sm font-bold hover:bg-teal-700 transition shadow-sm">
+                    Cari
+                </button>
+            </form>
         </div>
 
-        {{-- Pagination --}}
-        <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-                    <p class="text-sm text-gray-700 text-center sm:text-left">
-                        Menampilkan <span class="font-medium">{{ $pengajuans->firstItem() }}</span> 
-                        sampai <span class="font-medium">{{ $pengajuans->lastItem() }}</span> 
-                        dari <span class="font-medium">{{ $pengajuans->total() }}</span> data
-                    </p>
+        {{-- ALERT MESSAGES --}}
+        @if(session('success'))
+            <div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 text-sm rounded shadow-sm">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 text-sm rounded shadow-sm">{{ session('error') }}</div>
+        @endif
 
-                    <form action="{{ route($prefix . '.tracking.index') }}" method="GET" class="flex items-center">
-                        <input type="hidden" name="search" value="{{ request('search') }}">
-                        <input type="hidden" name="status" value="{{ request('status') }}">
-
-                        <select name="per_page" class="ml-0 sm:ml-2 border-gray-300 rounded-md text-sm focus:ring-bsi-teal focus:border-bsi-teal py-1.5 pl-2 pr-8 cursor-pointer" onchange="this.form.submit()">
-                            <option value="10" {{ request('per_page') == '10' ? 'selected' : '' }}>10</option>
-                            <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25</option>
-                            <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50</option>
-                            <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100</option>
-                        </select>
-                        <span class="text-sm text-gray-500 ml-2">baris per halaman</span>
-                    </form>
+        {{-- MODAL KONFIRMASI --}}
+        <div x-show="openConfirmModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" x-cloak>
+            <div class="flex items-center justify-center min-h-screen px-4 text-center">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="openConfirmModal = false"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full relative z-10">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
+                                 :class="actionType === 'approve' ? 'bg-green-100' : 'bg-red-100'">
+                                <svg x-show="actionType === 'approve'" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                <svg x-show="actionType === 'cancel'" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="actionType === 'approve' ? 'Konfirmasi Selesai' : 'Konfirmasi Pembatalan'"></h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500" x-show="actionType === 'approve'">Apakah Anda yakin menyelesaikan <b>Tahap <span x-text="selectedTahap"></span></b>? Status akan menjadi <b>DONE</b>.</p>
+                                    <p class="text-sm text-gray-500" x-show="actionType === 'cancel'">Apakah Anda yakin membatalkan <b>Tahap <span x-text="selectedTahap"></span></b>? Status akan kembali <b>NOT</b>.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <form :action="selectedUrl" method="POST" class="inline">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="status" :value="actionType === 'approve' ? 'DONE' : 'NOT'">
+                            <input type="hidden" name="tahap_ke" :value="selectedTahap">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition"
+                                :class="actionType === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
+                                x-text="actionType === 'approve' ? 'Ya, Selesai' : 'Ya, Batalkan'"></button>
+                        </form>
+                        <button type="button" @click="openConfirmModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Batal</button>
+                    </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="w-full md:w-auto flex justify-center md:justify-end">
-                    {{ $pengajuans->appends(request()->query())->links() }}
-                </div>
+        {{-- TABLE SECTION --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto min-h-[400px]">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-10">No</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[150px]">Nama Penerima</th>
+                            
+                            {{-- KOLOM FILTER WILAYAH (DROPDOWN OPTION) --}}
+                            @php
+                                $columns = [
+                                    'Deliniasi' => ['field' => 'f_deli', 'options' => $uniqueDeliniasi],
+                                    'Kabupaten' => ['field' => 'f_kab',  'options' => $uniqueKabupaten], 
+                                    'Kecamatan' => ['field' => 'f_kec',  'options' => $uniqueKecamatan], 
+                                    'Desa'      => ['field' => 'f_desa', 'options' => $uniqueDesa]
+                                ];
+                            @endphp
+
+                            @foreach($columns as $label => $data)
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider group relative" x-data="{ open: false }">
+                                    <div class="flex items-center justify-between cursor-pointer hover:text-gray-700" @click="open = !open" @click.away="open = false">
+                                        <span class="{{ request($data['field']) ? 'text-bsi-teal font-bold' : '' }}">{{ $label }}</span>
+                                        <svg class="w-3 h-3 ml-1 text-gray-400" :class="{'text-bsi-teal': '{{ request($data['field']) }}'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                    
+                                    {{-- Dropdown Content --}}
+                                    <div x-show="open" class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-100 z-20 p-2" x-cloak>
+                                        <form action="{{ route($prefix . '.tracking.index') }}" method="GET">
+                                            <input type="hidden" name="batch_id" value="{{ request('batch_id') }}">
+                                            <input type="hidden" name="f_nama" value="{{ request('f_nama') }}">
+                                            {{-- Keep other filters --}}
+                                            @foreach($columns as $l => $d)
+                                                @if($d['field'] != $data['field'] && request($d['field'])) 
+                                                    <input type="hidden" name="{{ $d['field'] }}" value="{{ request($d['field']) }}"> 
+                                                @endif
+                                            @endforeach
+
+                                            <div class="max-h-48 overflow-y-auto space-y-1">
+                                                <button type="submit" name="{{ $data['field'] }}" value="" 
+                                                    class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-50 {{ !request($data['field']) ? 'font-bold text-bsi-teal bg-teal-50' : 'text-gray-600' }}">
+                                                    Semua 
+                                                </button>
+                                                
+                                                @foreach($data['options'] as $option)
+                                                    <button type="submit" name="{{ $data['field'] }}" value="{{ $option }}" 
+                                                        class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-50 truncate {{ request($data['field']) == $option ? 'font-bold text-bsi-teal bg-teal-50' : 'text-gray-600' }}"
+                                                        title="{{ $option }}">
+                                                        {{ $option }}
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </form>
+                                    </div>
+                                </th>
+                            @endforeach
+
+                            {{-- KOLOM TAHAPAN DENGAN FILTER STATUS --}}
+                            @foreach([1, 2, 3] as $t)
+                                <th class="px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-24 relative" x-data="{ open: false }">
+                                    <div class="flex items-center justify-center cursor-pointer hover:text-gray-700" @click="open = !open" @click.away="open = false">
+                                        <span>Tahap {{ $t }}</span>
+                                        <svg class="w-3 h-3 ml-1 text-gray-400" :class="{'text-bsi-teal': '{{ request("f_tahap_$t") }}'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+
+                                    {{-- Dropdown Filter Status --}}
+                                    <div x-show="open" class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-20 p-2 text-left" x-cloak>
+                                        <form action="{{ route($prefix . '.tracking.index') }}" method="GET">
+                                            <input type="hidden" name="batch_id" value="{{ request('batch_id') }}">
+                                            <div class="space-y-1">
+                                                <button type="submit" name="f_tahap_{{ $t }}" value="" class="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50 rounded {{ !request("f_tahap_$t") ? 'font-bold text-bsi-teal' : '' }}">Semua</button>
+                                                <button type="submit" name="f_tahap_{{ $t }}" value="DONE" class="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50 rounded {{ request("f_tahap_$t") == 'DONE' ? 'font-bold text-green-600' : '' }}">DONE</button>
+                                                <button type="submit" name="f_tahap_{{ $t }}" value="NOT" class="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50 rounded {{ request("f_tahap_$t") == 'NOT' ? 'font-bold text-red-600' : '' }}">NOT</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </th>
+                            @endforeach
+
+                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-24">Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($penerima as $index => $item)
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ $penerima->firstItem() + $index }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="text-sm font-bold text-gray-900">{{ $item->nama_pb ?? $item->nama_penerima }}</div>
+                                @if($item->nomor_rekening)
+                                    <div class="text-xs text-gray-500 bg-gray-100 inline-block px-1.5 py-0.5 rounded border border-gray-200 mt-1 font-mono">{{ $item->nomor_rekening }}</div>
+                                @endif
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->deliniasi }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->kabupaten }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->kecamatan }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->desa }}</td>
+
+                            {{-- Status Logic --}}
+                            @php
+                                $s1 = $item->getStatusTahap(1);
+                                $s2 = $item->getStatusTahap(2);
+                                $s3 = $item->getStatusTahap(3);
+                            @endphp
+
+                            @foreach([1, 2, 3] as $t)
+                                <td class="px-2 py-4 whitespace-nowrap text-center">
+                                    @php 
+                                        $curr = ($t==1?$s1:($t==2?$s2:$s3));
+                                        $canApprove = ($curr == 'NOT' && ($t==1 || ($t==2 && $s1=='DONE') || ($t==3 && $s2=='DONE')));
+                                        $canRevert = ($curr == 'DONE' && ($t==3 || ($t==2 && $s3=='NOT') || ($t==1 && $s2=='NOT')));
+                                    @endphp
+
+                                    @if($curr == 'DONE')
+                                        @if($canRevert)
+                                            <button @click="openConfirmModal = true; actionType = 'cancel'; selectedUrl = '{{ route($prefix . '.tracking.update_tahap', $item->id) }}'; selectedTahap = '{{ $t }}'"
+                                                class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition cursor-pointer transform hover:scale-105" title="Klik untuk membatalkan Tahap {{ $t }}">DONE</button>
+                                        @else
+                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600 border border-green-100 opacity-70 cursor-not-allowed opacity-80" title="Batalkan tahap selanjutnya terlebih dahulu">DONE</span>
+                                        @endif
+                                    @elseif($canApprove)
+                                        <button @click="openConfirmModal = true; actionType = 'approve'; selectedUrl = '{{ route($prefix . '.tracking.update_tahap', $item->id) }}'; selectedTahap = '{{ $t }}'"
+                                            class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:border-red-300 transition cursor-pointer transform hover:scale-105" title="Klik untuk menyelesaikan Tahap {{ $t }}">NOT</button>
+                                    @else
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-400 border border-gray-200 opacity-60 cursor-not-allowed opacity-60" title="Selesaikan tahap sebelumnya">NOT</span>
+                                    @endif
+                                </td>
+                            @endforeach
+
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                @if(Route::has($prefix . '.tracking.show'))
+                                    <a href="{{ route($prefix . '.tracking.show', $item->id) }}" class="text-bsi-teal hover:underline font-bold text-xs">Detail</a>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="10" class="px-6 py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                {{ $penerima->appends(request()->query())->links() }}
             </div>
         </div>
     </div>

@@ -47,10 +47,6 @@
                     </div>
                 </div>
                 
-                <div class="text-right">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Update Terakhir</p>
-                    <p class="text-lg font-bold text-gray-800">{{ $penerima->updated_at->format('d M Y, H:i') }} WIB</p>
-                </div>
             </div>
 
             <div class="p-6 md:p-8">
