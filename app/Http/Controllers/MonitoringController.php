@@ -94,15 +94,15 @@ class MonitoringController extends Controller
 
         $perPage = $request->input('per_page', 10);
         $penerima = $query->latest()->paginate($perPage)->withQueryString();
-
-        return view('pupr.tracking.index', compact('batches', 'activeBatchId', 'penerima'));
+        $prefix = strtolower(auth()->user()->role);
+        return view($prefix . '.tracking.index', compact('batches', 'activeBatchId', 'penerima'));
     }
 
     public function show($id)
     {
         $penerima = PenerimaBantuan::with(['batch', 'tahapan'])->findOrFail($id);
-        
-        return view('pupr.tracking.show', compact('penerima'));
+        $prefix = strtolower(auth()->user()->role);
+        return view($prefix . '.tracking.show', compact('penerima'));
     }
 
     public function updateTahapan(Request $request, $id)

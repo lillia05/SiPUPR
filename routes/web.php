@@ -83,11 +83,9 @@ Route::middleware(['auth'])->group(function () {
 
         // Tracking Bantuan
         Route::get('/tracking', [MonitoringController::class, 'trackingPage'])->name('tracking.index');
-        Route::put('/tracking/{id}', [MonitoringController::class, 'updateStatus'])->name('tracking.update');
-        Route::get('/tracking/{id}/print', [MonitoringController::class, 'cetakPdfDetail'])->name('tracking.print');
+        Route::get('tracking/{id}', [MonitoringController::class, 'show'])->name('tracking.show'); 
+        Route::put('tracking/{id}/update-tahap', [MonitoringController::class, 'updateTahapan'])->name('tracking.update_tahap'); 
         Route::get('/tracking/search', [MonitoringController::class, 'doTracking'])->name('tracking.search');
-        
-        // Tambahan untuk cetak massal (Opsional, agar tidak error jika dipanggil di view)
         Route::get('/tracking/cetak-semua', [MonitoringController::class, 'cetakPdf'])->name('tracking.cetak');
     });
 

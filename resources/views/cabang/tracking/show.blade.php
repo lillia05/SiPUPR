@@ -91,7 +91,6 @@
             </div>
         </div>
 
-        {{-- SECTION KONTROL TAHAPAN --}}
         <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center px-2">
             <svg class="w-5 h-5 mr-2 text-bsi-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
             Update Tahapan Penyaluran
@@ -117,7 +116,6 @@
                             {{ $isLocked ? 'border-gray-100 bg-gray-50 opacity-70' : ($isDone ? 'border-green-400 ring-1 ring-green-400' : 'border-gray-200') }} 
                             overflow-hidden transition-all hover:shadow-lg">
                     
-                    {{-- Header Tahap --}}
                     <div class="px-5 py-4 {{ $isLocked ? 'bg-gray-100' : ($isDone ? 'bg-green-50' : 'bg-gray-50') }} 
                                 border-b {{ $isDone ? 'border-green-100' : 'border-gray-100' }} flex justify-between items-center">
                         <h4 class="font-bold {{ $isLocked ? 'text-gray-400' : ($isDone ? 'text-green-700' : 'text-gray-700') }}">
@@ -143,8 +141,8 @@
 
                             <div class="mb-4">
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal (Rp)</label>
-                                <input type="number" name="nominal" 
-                                    value="{{ $dataTahap ? $dataTahap->nominal : $defaultNominal }}" 
+                                <input type="text" name="nominal" 
+                                    value="{{ number_format($dataTahap ? $dataTahap->nominal : $defaultNominal, 0, ',', '.') }}" 
                                     {{ $isLocked ? 'disabled' : '' }}
                                     class="block w-full px-3 py-2 text-sm border-gray-300 rounded-lg 
                                            {{ $isLocked ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'focus:ring-bsi-teal focus:border-bsi-teal bg-gray-50 text-gray-700 font-mono' }}">

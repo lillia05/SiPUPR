@@ -10,7 +10,7 @@
 
 @extends('layouts.cabang')
 
-@section('title', 'Tracking Berkas - SiPUPR')
+@section('title', 'Tracking Bantuan - SiPUPR')
 
 @section('content')
 
@@ -103,7 +103,6 @@
             </div>
         </div>
 
-        {{-- TABLE SECTION --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto min-h-[400px]">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -112,7 +111,6 @@
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-10">No</th>
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[150px]">Nama Penerima</th>
                             
-                            {{-- KOLOM FILTER WILAYAH (DROPDOWN OPTION) --}}
                             @php
                                 $columns = [
                                     'Deliniasi' => ['field' => 'f_deli', 'options' => $uniqueDeliniasi],
@@ -129,12 +127,10 @@
                                         <svg class="w-3 h-3 ml-1 text-gray-400" :class="{'text-bsi-teal': '{{ request($data['field']) }}'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </div>
                                     
-                                    {{-- Dropdown Content --}}
                                     <div x-show="open" class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-100 z-20 p-2" x-cloak>
                                         <form action="{{ route($prefix . '.tracking.index') }}" method="GET">
                                             <input type="hidden" name="batch_id" value="{{ request('batch_id') }}">
                                             <input type="hidden" name="f_nama" value="{{ request('f_nama') }}">
-                                            {{-- Keep other filters --}}
                                             @foreach($columns as $l => $d)
                                                 @if($d['field'] != $data['field'] && request($d['field'])) 
                                                     <input type="hidden" name="{{ $d['field'] }}" value="{{ request($d['field']) }}"> 
@@ -160,7 +156,6 @@
                                 </th>
                             @endforeach
 
-                            {{-- KOLOM TAHAPAN DENGAN FILTER STATUS --}}
                             @foreach([1, 2, 3] as $t)
                                 <th class="px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-24 relative" x-data="{ open: false }">
                                     <div class="flex items-center justify-center cursor-pointer hover:text-gray-700" @click="open = !open" @click.away="open = false">
@@ -168,7 +163,6 @@
                                         <svg class="w-3 h-3 ml-1 text-gray-400" :class="{'text-bsi-teal': '{{ request("f_tahap_$t") }}'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </div>
 
-                                    {{-- Dropdown Filter Status --}}
                                     <div x-show="open" class="absolute top-full right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-20 p-2 text-left" x-cloak>
                                         <form action="{{ route($prefix . '.tracking.index') }}" method="GET">
                                             <input type="hidden" name="batch_id" value="{{ request('batch_id') }}">
@@ -201,7 +195,6 @@
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->kecamatan }}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ $item->desa }}</td>
 
-                            {{-- Status Logic --}}
                             @php
                                 $s1 = $item->getStatusTahap(1);
                                 $s2 = $item->getStatusTahap(2);
